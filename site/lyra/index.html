@@ -140,7 +140,8 @@
     </tbody>
     <tfoot><tr><td>Setup total</td><td></td><td class="num"></td><td class="num">≈ $0.18</td></tr></tfoot>
   </table></div>
-  <p class="muted" style="margin-top:8px">Rates: <strong>H100 $3.95/h</strong>, <strong>L4 $0.80/h</strong>, CPU $0.00003942 per core-second, memory $0.00000667 per GiB-second (<a href="https://modal.com/pricing">modal.com/pricing</a>). Every H100 container reserved 64 GiB of RAM, so each H100-second costs $0.001524 in total. Durations are container lifetimes from Modal's records and Lyra's logs, so they include idle seconds. Everything came out of Modal's free $30 monthly credit; <strong>grand total ≈ $10.35</strong> for both runs, all four 3D worlds and setup. The volumes were deleted afterwards, so there is no ongoing storage cost.</p>
+  <p class="muted" style="margin-top:8px">Rates: <strong>H100 $3.95/h</strong> ($0.0010972 per second), <strong>L4 $0.80/h</strong>, CPU $0.00003942 per core-second, memory $0.00000667 per GiB-second (<a href="https://modal.com/pricing">modal.com/pricing</a>). Run costs below are <strong>H100 time × $3.95/h</strong>, using container lifetimes from Modal's records and Lyra's logs (so they include idle seconds). <strong>Actual bill, from the Modal dashboard: $7.29</strong> for setup plus all four runs (2 distilled + 2 full quality), covered by Modal's free $30 monthly credit. The GPU-time estimate above comes to $7.51, which matches within the setup estimates. The volumes were deleted afterwards, so there is no ongoing storage cost.</p>
+  <div class="note" style="margin-top:10px"><strong>Correction:</strong> an earlier version of this page also charged the 64 GiB of RAM each H100 container reserved, at $0.00000667 per GiB-second. That inflated every run by about 40% (≈ $10.35 total). The Modal dashboard showed $7.29, which matches GPU time alone, so the RAM term has been removed.</div>
 
   <h2><span class="n">5</span>What it took to get running</h2>
   <ul class="plain">
@@ -167,11 +168,12 @@
     .catch(() => { $('caption-zoom').textContent = 'Caption file could not be loaded.'; });
 
   // Timings come from Lyra's logs (UTC, shown here in IST) and Modal's app records; costs use
-  // $3.95/h per H100 + 64 GiB of RAM at $0.00000667/GiB-s = $0.001524 per container-second.
+  // $3.95/h per H100 = $0.0010972 per container-second. GPU time alone matches the Modal dashboard ($7.29
+  // for setup + all four runs); an earlier version also charged reserved RAM, which overstated costs ~40%.
   const RUNS = {
     fast: {
       suffix: '_fast', paths: 'camera_paths.svg', viewA: 'lyra_A', viewB: 'lyra_B',
-      stats: [['~11 min', 'GPU time per 3D world'], ['~$1.03', 'compute per 3D world'], ['4 steps', 'sampling steps (DMD)'], ['11.2 M', 'Gaussians per 3D model']],
+      stats: [['~11 min', 'GPU time per 3D world'], ['~$0.74', 'compute per 3D world'], ['4 steps', 'sampling steps (DMD)'], ['11.2 M', 'Gaussians per 3D model']],
       timeline: [
         ['Container start → weights loaded (97 GB + 3 LoRAs)', '19:25:06 – 19:27:23', '2 m 17 s', 137],
         ['Depth setup + video generation, 322 frames', '19:27:23 – 19:33:01', '5 m 38 s', 338],
@@ -183,7 +185,7 @@
     },
     full: {
       suffix: '', paths: 'camera_paths_full.svg', viewA: 'lyra_A_full', viewB: 'lyra_B_full',
-      stats: [['~44 min', 'GPU time per 3D world'], ['~$4.06', 'compute per 3D world'], ['50 steps', 'sampling steps (CFG 5)'], ['11.2 M', 'Gaussians per 3D model']],
+      stats: [['~44 min', 'GPU time per 3D world'], ['~$2.92', 'compute per 3D world'], ['50 steps', 'sampling steps (CFG 5)'], ['11.2 M', 'Gaussians per 3D model']],
       timeline: [
         ['Container start → weights loaded (97 GB + 2 LoRAs)', '19:40:55 – 19:43:36', '2 m 41 s', 161],
         ['Depth setup (Depth-Anything-3 + MoGe scale on the photo)', '19:43:36 – 19:44:48', '1 m 12 s', 72],
@@ -194,7 +196,7 @@
       perWorldSec: 2665, bothSec: 2 * 2665,
     },
   };
-  const RATE = 0.0015242; // $ per H100 container-second incl. 64 GiB RAM
+  const RATE = 0.0010972; // $ per H100 second
   const money = (s) => `$${(s * RATE).toFixed(2)}`;
 
   function video(file, caption) {

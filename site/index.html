@@ -96,7 +96,7 @@
         <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/lyra_full_side.jpg" alt="Lyra full-quality 3D splat rendered from the side of the stair" loading="lazy"><figcaption>full quality · 3D render, around the stair</figcaption></figure>
       </div>
       <div class="body">
-        <div><span class="tag">world model</span><span class="tag">NVIDIA Lyra 2.0</span><span class="tag">distilled: ~11 min · ~$1 per world</span><span class="tag">full quality: ~44 min · ~$4 per world</span></div>
+        <div><span class="tag">world model</span><span class="tag">NVIDIA Lyra 2.0</span><span class="tag">distilled: ~11 min · ~$0.74 per world</span><span class="tag">full quality: ~44 min · ~$2.92 per world</span></div>
         <h3>Lyra 2.0: photo → generated walkthrough video → 3D world</h3>
         <p>The strongest result so far. Lyra generates a camera walkthrough video (zoom or orbit) from the one photo, then reconstructs it into an 11-million-Gaussian 3D scene. It keeps the filigree, the gothic gate and the glass roof, and invents a believable far side of the stair.</p>
         <div><a class="open" href="lyra/">Read the full story: distilled vs full quality, time, cost</a> <a class="open" href="splat/?model=lyra_B_full" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · full</a> <a class="open" href="splat/?model=lyra_B" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · distilled</a></div>
@@ -164,7 +164,7 @@
         <tr><td>Behind the stair / outside the frame</td><td class="g">Whole glasshouse built</td><td class="b">Empty</td><td class="b">Empty</td><td class="g">Invented (orbit run)</td><td class="m">Coded stair only</td></tr>
         <tr><td>Walk and climb</td><td class="g">Yes</td><td class="b">No</td><td class="b">No</td><td class="b">No</td><td class="g">Yes (stair)</td></tr>
         <tr><td>Editable (steps, radius, layout)</td><td class="g">Change a parameter</td><td class="b">No</td><td class="b">No</td><td class="b">No</td><td class="m">Stair only</td></tr>
-        <tr><td>Time to result</td><td>One agent session</td><td>~8 min (mostly GPU queue)</td><td>~14 min queue, 0.73 s inference</td><td>~11 min / ~44 min of one H100 (~$1 / ~$4), distilled / full</td><td>Both, plus alignment</td></tr>
+        <tr><td>Time to result</td><td>One agent session</td><td>~8 min (mostly GPU queue)</td><td>~14 min queue, 0.73 s inference</td><td>~11 min / ~44 min of one H100 (~$0.74 / ~$2.92), distilled / full</td><td>Both, plus alignment</td></tr>
         <tr><td>Download size</td><td>52 KB of code</td><td>16 MB (500k splats)</td><td>8.3 MB (271k splats)</td><td>~60 MB (4M of 11.2M splats, .spz)</td><td>~15 MB</td></tr>
       </tbody>
     </table>
