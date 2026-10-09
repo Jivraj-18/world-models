@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lyra 2.0: One Photo to 3D</title>
-  <meta name="description" content="How NVIDIA Lyra 2.0 turned one photo of the Schönbrunn Palm House into a generated walkthrough video and then a 3D Gaussian splat: inputs, intermediate outputs, time and cost.">
+  <meta name="description" content="How NVIDIA Lyra 2.0 turned one photo of the Schönbrunn Palm House into a generated walkthrough video and then a 3D Gaussian splat, in distilled and full-quality modes: inputs, intermediate outputs, time and cost.">
   <style>
-    :root { --bg:#f6f3ec; --surface:#fffdf8; --ink:#24231f; --muted:#6a665b; --line:#e2dccd; --accent:#3f6a35; --accent-ink:#fff; --chip:#efe9da; --warn:#8a6a12; }
-    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#151613; --surface:#1d1f1a; --ink:#ebe8de; --muted:#a39f92; --line:#34362f; --accent:#8fbf7a; --accent-ink:#13200f; --chip:#2a2c25; --warn:#e0bd5c; } }
-    :root[data-theme="dark"] { --bg:#151613; --surface:#1d1f1a; --ink:#ebe8de; --muted:#a39f92; --line:#34362f; --accent:#8fbf7a; --accent-ink:#13200f; --chip:#2a2c25; --warn:#e0bd5c; }
+    :root { --bg:#f6f3ec; --surface:#fffdf8; --ink:#24231f; --muted:#6a665b; --line:#e2dccd; --accent:#3f6a35; --accent-ink:#fff; --chip:#efe9da; --warn:#8a6a12; --fast:#8a6a12; --full:#3f6a35; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#151613; --surface:#1d1f1a; --ink:#ebe8de; --muted:#a39f92; --line:#34362f; --accent:#8fbf7a; --accent-ink:#13200f; --chip:#2a2c25; --warn:#e0bd5c; --fast:#e0bd5c; --full:#8fbf7a; } }
+    :root[data-theme="dark"] { --bg:#151613; --surface:#1d1f1a; --ink:#ebe8de; --muted:#a39f92; --line:#34362f; --accent:#8fbf7a; --accent-ink:#13200f; --chip:#2a2c25; --warn:#e0bd5c; --fast:#e0bd5c; --full:#8fbf7a; }
     * { box-sizing: border-box; }
     body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif; }
     main { max-width: 1040px; margin: 0 auto; padding: 28px 16px 64px; }
@@ -17,12 +17,9 @@
     h1 { font-size: clamp(26px,4vw,36px); line-height:1.15; margin: 10px 0 8px; }
     h2 { font-size: 22px; margin: 44px 0 6px; display:flex; gap:10px; align-items:baseline; }
     h2 .n { font-size:13px; color:var(--accent-ink); background:var(--accent); border-radius:999px; padding:1px 9px; }
-    h3 { font-size: 16px; margin: 18px 0 6px; }
+    h3 { font-size: 16px; margin: 20px 0 6px; }
     p { margin: 0 0 12px; } .muted { color: var(--muted); }
-    .lede { color: var(--muted); font-size: 17px; max-width: 800px; }
-    .stats { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin: 22px 0 6px; }
-    .stat { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
-    .stat b { display:block; font-size:24px; line-height:1.2; } .stat span { color:var(--muted); font-size:13px; }
+    .lede { color: var(--muted); font-size: 17px; max-width: 820px; }
     .two { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     figure { margin:0; } figure img, figure video { width:100%; display:block; border-radius:10px; border:1px solid var(--line); background:#000; }
     figcaption { font-size:13px; color:var(--muted); margin-top:6px; }
@@ -30,10 +27,10 @@
     pre { white-space:pre-wrap; margin:0; font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
     code { font:13.5px ui-monospace,SFMono-Regular,Menlo,monospace; background:var(--chip); padding:1px 5px; border-radius:4px; }
     .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
-    table { border-collapse:collapse; width:100%; min-width:640px; font-size:14.5px; }
+    table { border-collapse:collapse; width:100%; min-width:620px; font-size:14.5px; }
     th,td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
     th { font-size:13px; color:var(--muted); background:var(--bg); font-weight:600; }
-    tr:last-child td { border-bottom:0; } td.num { text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; }
+    tr:last-child td { border-bottom:0; } td.num, th.num { text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; }
     tfoot td { font-weight:700; }
     .open { display:inline-block; background:var(--accent); color:var(--accent-ink); text-decoration:none; padding:8px 14px; border-radius:8px; font-weight:600; font-size:14px; margin: 4px 8px 4px 0; }
     .pipeline { display:grid; grid-template-columns: repeat(5,1fr); gap:8px; margin: 18px 0 4px; }
@@ -42,21 +39,30 @@
     .pipeline div:not(:last-child)::after { content:"→"; position:absolute; right:-14px; top:50%; transform:translateY(-50%); color:var(--muted); font-weight:700; }
     ul.plain { padding-left:20px; } ul.plain li { margin-bottom:6px; }
     .note { border-left:3px solid var(--warn); padding:8px 12px; background:var(--surface); border-radius:0 8px 8px 0; font-size:14.5px; }
+    .jump { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 0; }
+    .jump a { text-decoration:none; font-weight:600; font-size:14px; padding:7px 14px; border-radius:999px; border:1.5px solid currentColor; }
+    .run { border:1.5px solid var(--line); border-radius:16px; padding:6px 18px 20px; margin-top:44px; background: color-mix(in srgb, var(--surface) 55%, transparent); }
+    .run.fast { border-color: color-mix(in srgb, var(--fast) 55%, var(--line)); }
+    .run.full { border-color: color-mix(in srgb, var(--full) 55%, var(--line)); }
+    .run > h2 { margin-top:16px; }
+    .badge { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 9px; border-radius:999px; color:var(--accent-ink); }
+    .fast .badge, .badge.fast { background:var(--fast); } .full .badge, .badge.full { background:var(--full); }
+    .stats { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin: 10px 0 6px; }
+    .stat { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+    .stat b { display:block; font-size:22px; line-height:1.2; } .stat span { color:var(--muted); font-size:13px; }
     footer { margin-top:48px; font-size:13px; color:var(--muted); border-top:1px solid var(--line); padding-top:16px; }
-    @media (max-width: 820px) { .stats { grid-template-columns: repeat(2,1fr); } .two { grid-template-columns:1fr; } .pipeline { grid-template-columns:1fr; } .pipeline div::after { display:none; } }
+    @media (max-width: 820px) { .stats { grid-template-columns: repeat(2,1fr); } .two { grid-template-columns:1fr; } .pipeline { grid-template-columns:1fr; } .pipeline div::after { display:none; } .run { padding: 4px 12px 16px; } }
   </style>
 </head>
 <body>
 <main>
   <a class="back" href="../">← Back to the comparison</a>
   <h1>NVIDIA Lyra 2.0: one photo → a video → a 3D world</h1>
-  <p class="lede">The whole journey of the Schönbrunn Palm House photo through Lyra 2.0, run on rented H100 GPUs on Modal on 9 October 2026. This page covers the <strong>distilled (fast) mode</strong>; the full-quality runs will be added when they finish.</p>
-
-  <div class="stats">
-    <div class="stat"><b>1 photo</b><span>the only visual input</span></div>
-    <div class="stat"><b>~10 min</b><span>GPU time per 3D world (fast mode)</span></div>
-    <div class="stat"><b>~$1.05</b><span>compute per 3D world (fast mode)</span></div>
-    <div class="stat"><b>11.2 M</b><span>Gaussians in each 3D model</span></div>
+  <p class="lede">The whole journey of the Schönbrunn Palm House photo through Lyra 2.0, run on rented H100 GPUs on Modal on 9 October 2026. Lyra ran twice on the same inputs: once in <strong>distilled (fast)</strong> mode and once at <strong>full quality</strong>. Each run is covered separately below, with its own time and cost.</p>
+  <div class="jump">
+    <a href="#fast" style="color:var(--fast)">Distilled (fast) run →</a>
+    <a href="#full" style="color:var(--full)">Full-quality run →</a>
+    <a href="#compare" style="color:var(--muted)">Side-by-side comparison →</a>
   </div>
 
   <div class="pipeline">
@@ -67,7 +73,7 @@
     <div><b>5 · 3D model</b>Gaussian splat you can fly through</div>
   </div>
 
-  <h2><span class="n">1</span>Input</h2>
+  <h2><span class="n">1</span>Input (the same for both runs)</h2>
   <p>Lyra takes three things: a starting image, a camera path and a text caption. Nothing else about the Palm House is given to it.</p>
   <div class="two">
     <figure>
@@ -75,15 +81,16 @@
       <figcaption>The photo, cropped from the 6016 px original to 16:9 at 1280×720 to match Lyra's examples. Lyra resizes it to 832×480 internally. Source: Flocci Nivis, CC BY-SA 4.0.</figcaption>
     </figure>
     <div class="card">
-      <h3 style="margin-top:0">Camera paths (two runs)</h3>
+      <h3 style="margin-top:0">Camera paths</h3>
       <ul class="plain">
         <li><strong>A · zoom</strong>: push in to 0.5× the distance to the stair (81 frames), then pull back 1.5× behind the photographer (241 frames). Built-in <code>horizontal_zoom</code>.</li>
         <li><strong>B · orbit</strong>: push in 0.35× (81 frames), then circle about 69° (1.2 rad) around the point at the centre of the photo, the stair (241 frames). Built-in <code>orbit_horizontal</code>.</li>
       </ul>
-      <h3>Settings</h3>
+      <h3>Shared settings</h3>
       <ul class="plain">
-        <li>Resolution 480×832, 16 fps, seed 1, 322 frames per run.</li>
-        <li>NVIDIA's <code>realism_boost</code> and <code>detail_enhancer</code> LoRAs (0.4 each) plus the <strong>DMD distillation</strong> LoRA: 4 sampling steps instead of 50, about 15× faster.</li>
+        <li>Resolution 480×832, 16 fps, seed 1, 322 frames per video.</li>
+        <li>NVIDIA's <code>realism_boost</code> and <code>detail_enhancer</code> LoRAs at 0.4 each.</li>
+        <li>The only difference between the runs is the sampler (see each run below).</li>
       </ul>
     </div>
   </div>
@@ -91,82 +98,51 @@
   <div class="card"><pre id="caption-zoom">Loading…</pre></div>
   <p class="muted" style="margin-top:8px">Run B used the same description reworded for an orbit: “a smooth orbit around the staircase that reveals its far side… the same continuous helix of steps and the same filigree pattern are seen from every side”.</p>
 
-  <h2><span class="n">2</span>Generation: the video model fills what it has not seen</h2>
-  <p>Lyra builds the video in chunks of 80 frames. Before each new frame it projects everything it has already generated into the new camera position, using per-frame depth. That is its 3D memory. The video model, a 14-billion-parameter Wan 2.1, then paints only what that memory cannot explain.</p>
-  <div class="two">
-    <figure><video id="v-a-out" controls muted loop playsinline preload="metadata"></video>
-      <figcaption><strong>A · zoom-out phase (intermediate output).</strong> Top: the 3D memory reprojected into the moving camera; black means never seen. Bottom: the frame Lyra generated.</figcaption></figure>
-    <figure><video id="v-b-out" controls muted loop playsinline preload="metadata"></video>
-      <figcaption><strong>B · orbit phase (intermediate output).</strong> As the camera swings round, more of the top half goes black and the model has to invent the stair's far side.</figcaption></figure>
-  </div>
-  <div class="two" style="margin-top:14px">
-    <figure><video id="v-a-in" controls muted loop playsinline preload="metadata"></video>
-      <figcaption>A · zoom-in phase (intermediate, 81 frames).</figcaption></figure>
-    <figure><video id="v-b-in" controls muted loop playsinline preload="metadata"></video>
-      <figcaption>B · approach phase (intermediate, 81 frames).</figcaption></figure>
-  </div>
-
-  <h2><span class="n">3</span>The generated walkthrough video</h2>
-  <p>The two phases are joined into one 322-frame clip: the zoom-out played in reverse, then the zoom-in. Your photo sits at frame 240/241 of each clip.</p>
-  <div class="two">
-    <figure><video id="v-a" controls muted loop playsinline preload="metadata"></video><figcaption>A · zoom: 20 s, 832×480.</figcaption></figure>
-    <figure><video id="v-b" controls muted loop playsinline preload="metadata"></video><figcaption>B · orbit: 20 s, 832×480.</figcaption></figure>
-  </div>
-
-  <h2><span class="n">4</span>Reconstruction: from video to 3D</h2>
-  <p>A second, separate stage of Lyra lifts the video into 3D:</p>
+  <h2><span class="n">2</span>How Lyra works (both runs)</h2>
   <ul class="plain">
-    <li><strong>VIPE</strong> runs visual SLAM (DROID-SLAM) over all 322 frames to recover where the camera was in every frame. Below are the paths it recovered, which match the requested zoom and orbit.</li>
-    <li><strong>Depth-Anything-3</strong>, with a Gaussian head that NVIDIA fine-tuned on Lyra's own videos, predicts depth and 3D Gaussians from 128 keyframes using those poses.</li>
-    <li>The Gaussians from all keyframes are fused into one scene: <strong>11,153,408 Gaussians, a 758 MB PLY file</strong> per run. Lyra then renders a fly-through of that splat to check it.</li>
+    <li><strong>Generation.</strong> Lyra builds the video in chunks of 80 frames. Before each new frame it projects everything generated so far into the new camera position using per-frame depth. That is its 3D memory. The video model, a 14-billion-parameter Wan 2.1, then paints only what that memory cannot explain. The intermediate clips below show this: <strong>top half</strong>, the reprojected memory (black means never seen); <strong>bottom half</strong>, the generated frame.</li>
+    <li><strong>Joining.</strong> The zoom-out phase is played in reverse and joined to the zoom-in phase into one 322-frame clip. Your photo sits at frame 240.</li>
+    <li><strong>Reconstruction.</strong> A separate stage lifts the video to 3D. <strong>VIPE</strong> runs visual SLAM (DROID-SLAM) over all 322 frames to recover the camera path. <strong>Depth-Anything-3</strong>, with a Gaussian head that NVIDIA fine-tuned on Lyra videos, predicts Gaussians from 128 keyframes. These are fused into one scene of <strong>11,153,408 Gaussians (758 MB PLY)</strong>.</li>
   </ul>
-  <figure><img id="cam-paths" alt="Top-down plot of the recovered camera paths for the zoom and orbit runs" loading="lazy" style="background:#fffdf8">
-    <figcaption>Intermediate output: camera paths recovered by VIPE. The red square is the frame that matches your photo.</figcaption></figure>
-  <div class="two" style="margin-top:14px">
-    <figure><video id="v-a-gs" controls muted loop playsinline preload="metadata"></video><figcaption>A · render of the reconstructed 3D splat, not the generated video.</figcaption></figure>
-    <figure><video id="v-b-gs" controls muted loop playsinline preload="metadata"></video><figcaption>B · render of the reconstructed 3D splat. Black corners are areas no frame covered.</figcaption></figure>
+
+  <section class="run fast" id="fast">
+    <h2><span class="badge">Distilled</span>Run 1: fast mode (DMD)</h2>
+    <p>Adds NVIDIA's <code>dmd_distillation</code> LoRA, which needs <strong>4 sampling steps instead of 50</strong> and no classifier-free guidance: about 15× faster. NVIDIA notes it can weaken prompt following and repeat patterns.</p>
+    <div class="stats" data-stats="fast"></div>
+    <div data-run="fast"></div>
+  </section>
+
+  <section class="run full" id="full">
+    <h2><span class="badge">Full quality</span>Run 2: full mode</h2>
+    <p>Lyra's recommended setting: <strong>50 sampling steps with classifier-free guidance (scale 5)</strong>, no distillation LoRA. About 7× slower than distilled in our runs.</p>
+    <div class="stats" data-stats="full"></div>
+    <div data-run="full"></div>
+  </section>
+
+  <h2 id="compare"><span class="n">3</span>Distilled vs full quality, side by side</h2>
+  <p>The same moment of each orbit walkthrough. Use the 3D viewer buttons in each run section to compare the reconstructed models.</p>
+  <div class="two">
+    <figure><video id="cmp-fast" controls muted loop playsinline preload="metadata"></video><figcaption><span class="badge fast">Distilled</span> B · orbit, generated video</figcaption></figure>
+    <figure><video id="cmp-full" controls muted loop playsinline preload="metadata"></video><figcaption><span class="badge full">Full quality</span> B · orbit, generated video</figcaption></figure>
   </div>
-
-  <h2><span class="n">5</span>The 3D model</h2>
-  <p>Explore the result yourself. The web viewer loads about 4 million of the 11.2 million Gaussians (~60 MB, compressed .spz), keeping the most opaque one in each small cube of space so near detail survives, and starts at the exact camera of your photo.</p>
-  <a class="open" href="../splat/?model=lyra_A">Open 3D model · A zoom</a>
-  <a class="open" href="../splat/?model=lyra_B">Open 3D model · B orbit</a>
-  <p class="muted">The full 758 MB PLY files are kept locally (<code>world-model/outputs/palm-house/lyra/</code>) and open in any 3D Gaussian splat viewer such as SuperSplat.</p>
-
-  <h2><span class="n">6</span>Time</h2>
-  <p>Times in IST on 9 October 2026, from Modal's app records, Lyra's own logs and output-file timestamps. Both runs ran in parallel on separate H100s.</p>
-  <div class="table-wrap"><table>
-    <thead><tr><th>Step</th><th>When</th><th>Duration</th><th>Where</th></tr></thead>
-    <tbody>
-      <tr><td>Download 97 GB of Lyra checkpoints + Depth-Anything-3</td><td>18:48 – 18:56</td><td class="num">7 m 39 s</td><td>CPU, 4 cores</td></tr>
-      <tr><td>Build the software image (5 attempts; fixes below)</td><td>18:48 – 19:24</td><td class="num">~36 min wall</td><td>Modal builder (CPU)</td></tr>
-      <tr><td>GPU import checks</td><td>19:15 – 19:24</td><td class="num">~4.5 min</td><td>L4</td></tr>
-      <tr><td>Container start → model loaded (97 GB of weights + 3 LoRAs)</td><td>19:25:06 – 19:27:30</td><td class="num">~2 m 25 s</td><td>H100 × 2</td></tr>
-      <tr><td>Video generation, 322 frames each</td><td>19:27:30 – 19:33:01</td><td class="num">~5 m 30 s</td><td>H100 × 2</td></tr>
-      <tr><td>Reconstruction: VIPE poses (322 frames)</td><td>19:37:45 – 19:39:17</td><td class="num">~1 m 30 s</td><td>H100 × 2</td></tr>
-      <tr><td>Reconstruction: Depth-Anything-3 Gaussians + fly-through render</td><td>19:39:17 – 19:40:20</td><td class="num">~1 m 05 s</td><td>H100 × 2</td></tr>
-    </tbody>
-    <tfoot><tr><td>Per 3D world, once set up</td><td></td><td class="num">≈ 10 min</td><td>one H100</td></tr></tfoot>
+  <div class="table-wrap" style="margin-top:16px"><table>
+    <thead><tr><th>Per 3D world (one H100)</th><th class="num">Distilled</th><th class="num">Full quality</th></tr></thead>
+    <tbody id="cmp-rows"></tbody>
   </table></div>
 
-  <h2><span class="n">7</span>Cost (estimate)</h2>
-  <p>Modal bills per second. Rates used: <strong>H100 $3.95/h</strong>, <strong>L4 $0.80/h</strong>, CPU $0.00003942 per core-second, memory $0.00000667 per GiB-second, from <a href="https://modal.com/pricing">modal.com/pricing</a>. Each H100 container reserved 64 GiB of RAM. Durations are container lifetimes from Modal's records, so they include idle seconds.</p>
+  <h2><span class="n">4</span>One-time setup (shared by both runs)</h2>
   <div class="table-wrap"><table>
-    <thead><tr><th>Item</th><th>Resources × time</th><th class="num">Cost</th></tr></thead>
+    <thead><tr><th>Step</th><th>When (IST)</th><th class="num">Duration</th><th class="num">Cost</th></tr></thead>
     <tbody>
-      <tr><td>Video generation (both runs, incl. a first reconstruction attempt that failed)</td><td>2 × H100 + 64 GiB × 518 s</td><td class="num">$1.58</td></tr>
-      <tr><td>Reconstruction (both runs)</td><td>2 × H100 + 64 GiB × ~160 s</td><td class="num">$0.49</td></tr>
-      <tr><td>GPU import checks</td><td>L4 × ~4.5 min</td><td class="num">$0.06</td></tr>
-      <tr><td>Checkpoint download</td><td>4 cores + 16 GiB × 459 s</td><td class="num">$0.12</td></tr>
-      <tr><td>Image builds</td><td>Modal builder</td><td class="num">not itemised</td></tr>
+      <tr><td>Download 97 GB of Lyra checkpoints + Depth-Anything-3 (4 CPU cores, 16 GiB)</td><td>18:48 – 18:56</td><td class="num">7 m 39 s</td><td class="num">$0.12</td></tr>
+      <tr><td>Build the software image (5 attempts; fixes below)</td><td>18:48 – 19:24</td><td class="num">~36 min wall</td><td class="num">not itemised</td></tr>
+      <tr><td>GPU import checks on an L4</td><td>19:15 – 19:24</td><td class="num">~4.5 min</td><td class="num">$0.06</td></tr>
     </tbody>
-    <tfoot><tr><td>Total for the two distilled 3D worlds</td><td></td><td class="num">≈ $2.25</td></tr>
-      <tr><td>Marginal cost of one more distilled world</td><td>~11 min of one H100 + 64 GiB</td><td class="num">≈ $1.05</td></tr></tfoot>
+    <tfoot><tr><td>Setup total</td><td></td><td class="num"></td><td class="num">≈ $0.18</td></tr></tfoot>
   </table></div>
-  <p class="muted" style="margin-top:8px">All of this came out of Modal's free $30 monthly credit. Check the exact figures in your Modal dashboard under Usage.</p>
+  <p class="muted" style="margin-top:8px">Rates: <strong>H100 $3.95/h</strong>, <strong>L4 $0.80/h</strong>, CPU $0.00003942 per core-second, memory $0.00000667 per GiB-second (<a href="https://modal.com/pricing">modal.com/pricing</a>). Every H100 container reserved 64 GiB of RAM, so each H100-second costs $0.001524 in total. Durations are container lifetimes from Modal's records and Lyra's logs, so they include idle seconds. Everything came out of Modal's free $30 monthly credit; <strong>grand total ≈ $10.35</strong> for both runs, all four 3D worlds and setup. The volumes were deleted afterwards, so there is no ongoing storage cost.</p>
 
-  <h2><span class="n">8</span>What it took to get running</h2>
-  <p>Lyra's install guide is written for a hand-built conda machine. Making it work on Modal took these fixes, each traced to a cause:</p>
+  <h2><span class="n">5</span>What it took to get running</h2>
   <ul class="plain">
     <li><strong>transformer-engine wouldn't compile: missing <code>nvtx3</code> headers.</strong> Fixed with the include paths from <a href="https://github.com/nv-tlabs/lyra/issues/47">lyra#47</a>.</li>
     <li><strong>transformer-engine required cuDNN ≥ 9.12.</strong> Releases from 21 Sep 2026 raised the minimum; pinned to v2.13.0, which was current when Lyra shipped.</li>
@@ -174,23 +150,91 @@
     <li><strong><code>addict</code> missing at runtime.</strong> Found by importing every inference module on a cheap L4 before using H100s.</li>
     <li><strong>Reconstruction crashed on an old <code>gdown</code>.</strong> The DROID-SLAM weights are now baked into the image, so no Google Drive download happens at runtime.</li>
   </ul>
-  <div class="note">Lyra's model licence is the NVIDIA Internal Scientific Research and Development Model License, so these outputs are for non-commercial research. The photo and everything derived from it are CC BY-SA 4.0.</div>
+  <div class="note">Lyra's model licence is the NVIDIA Internal Scientific Research and Development Model License, so these outputs are for non-commercial research. The photo and everything derived from it are CC BY-SA 4.0. The web viewer shows about 4 million of each model's 11.2 million Gaussians (thinned per voxel, compressed .spz); the full PLYs open in SuperSplat (File → Import).</div>
 
   <footer>
-    Code: <code>world-model/lyra/modal_lyra.py</code> in this repository. Lyra 2.0: <a href="https://github.com/nv-tlabs/lyra/tree/main/Lyra-2">nv-tlabs/lyra</a> · <a href="https://arxiv.org/abs/2604.13036">paper</a>. Photo: <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">Flocci Nivis</a>, CC BY-SA 4.0.
+    Code: <code>world-model/lyra/</code> in this repository. Lyra 2.0: <a href="https://github.com/nv-tlabs/lyra/tree/main/Lyra-2">nv-tlabs/lyra</a> · <a href="https://arxiv.org/abs/2604.13036">paper</a>. Photo: <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">Flocci Nivis</a>, CC BY-SA 4.0.
   </footer>
 </main>
 <script type="module">
   import { ASSETS } from '../js/config.js';
   const L = `${ASSETS}/lyra`;
-  const set = (id, attr, url) => { const el = document.getElementById(id); if (el) el[attr] = url; };
-  set('input-img', 'src', `${L}/input_1280x720.jpg`);
-  set('cam-paths', 'src', `${L}/camera_paths.svg`);
-  for (const [id, f] of [['v-a-out', 'A_zoom_fast_zoom_out'], ['v-b-out', 'B_orbit_fast_zoom_out'], ['v-a-in', 'A_zoom_fast_zoom_in'],
-                         ['v-b-in', 'B_orbit_fast_zoom_in'], ['v-a', 'A_zoom_fast_combined'], ['v-b', 'B_orbit_fast_combined'],
-                         ['v-a-gs', 'A_zoom_fast_gs_trajectory'], ['v-b-gs', 'B_orbit_fast_gs_trajectory']]) set(id, 'src', `${L}/${f}.mp4`);
-  fetch(`${L}/captions.json`).then((r) => r.json()).then((c) => { document.getElementById('caption-zoom').textContent = c.zoom; })
-    .catch(() => { document.getElementById('caption-zoom').textContent = 'Caption file could not be loaded.'; });
+  const $ = (id) => document.getElementById(id);
+  $('input-img').src = `${L}/input_1280x720.jpg`;
+  $('cmp-fast').src = `${L}/B_orbit_fast_combined.mp4`;
+  $('cmp-full').src = `${L}/B_orbit_combined.mp4`;
+  fetch(`${L}/captions.json`).then((r) => r.json()).then((c) => { $('caption-zoom').textContent = c.zoom; })
+    .catch(() => { $('caption-zoom').textContent = 'Caption file could not be loaded.'; });
+
+  // Timings come from Lyra's logs (UTC, shown here in IST) and Modal's app records; costs use
+  // $3.95/h per H100 + 64 GiB of RAM at $0.00000667/GiB-s = $0.001524 per container-second.
+  const RUNS = {
+    fast: {
+      suffix: '_fast', paths: 'camera_paths.svg', viewA: 'lyra_A', viewB: 'lyra_B',
+      stats: [['~11 min', 'GPU time per 3D world'], ['~$1.03', 'compute per 3D world'], ['4 steps', 'sampling steps (DMD)'], ['11.2 M', 'Gaussians per 3D model']],
+      timeline: [
+        ['Container start → weights loaded (97 GB + 3 LoRAs)', '19:25:06 – 19:27:23', '2 m 17 s', 137],
+        ['Depth setup + video generation, 322 frames', '19:27:23 – 19:33:01', '5 m 38 s', 338],
+        ['First reconstruction attempt (crashed on old gdown; container exit)', '19:33:01 – 19:33:44', '43 s', 43],
+        ['Reconstruction re-run: VIPE poses (322 frames)', '19:37:45 – 19:39:17', '1 m 32 s', 92],
+        ['Reconstruction: Depth-Anything-3 Gaussians + render', '19:39:17 – 19:40:20', '1 m 03 s', 63],
+      ],
+      perWorldSec: 678, bothSec: 2 * 678,
+    },
+    full: {
+      suffix: '', paths: 'camera_paths_full.svg', viewA: 'lyra_A_full', viewB: 'lyra_B_full',
+      stats: [['~44 min', 'GPU time per 3D world'], ['~$4.06', 'compute per 3D world'], ['50 steps', 'sampling steps (CFG 5)'], ['11.2 M', 'Gaussians per 3D model']],
+      timeline: [
+        ['Container start → weights loaded (97 GB + 2 LoRAs)', '19:40:55 – 19:43:36', '2 m 41 s', 161],
+        ['Depth setup (Depth-Anything-3 + MoGe scale on the photo)', '19:43:36 – 19:44:48', '1 m 12 s', 72],
+        ['Video generation: zoom-in phase (81 frames)', '19:44:48 – ~19:54', '~9 m 20 s', 560],
+        ['Video generation: zoom-out / orbit phase (241 frames, 3 chunks)', '~19:54 – 20:22:47', '~28 m 40 s', 1719],
+        ['Reconstruction: VIPE poses + Depth-Anything-3 Gaussians + render', '20:22:47 – 20:25:20', '~2 m 33 s', 153],
+      ],
+      perWorldSec: 2665, bothSec: 2 * 2665,
+    },
+  };
+  const RATE = 0.0015242; // $ per H100 container-second incl. 64 GiB RAM
+  const money = (s) => `$${(s * RATE).toFixed(2)}`;
+
+  function video(file, caption) {
+    return `<figure><video src="${L}/${file}.mp4" controls muted loop playsinline preload="metadata"></video><figcaption>${caption}</figcaption></figure>`;
+  }
+  for (const [key, r] of Object.entries(RUNS)) {
+    document.querySelector(`[data-stats="${key}"]`).innerHTML = r.stats.map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+    const total = r.timeline.reduce((a, t) => a + t[3], 0);
+    document.querySelector(`[data-run="${key}"]`).innerHTML = `
+      <h3>Intermediate output: generation in progress</h3>
+      <div class="two">${video(`A_zoom${r.suffix}_zoom_out`, '<strong>A · zoom-out phase.</strong> Top: 3D memory reprojected into the new camera (black = never seen). Bottom: generated frame.')}
+        ${video(`B_orbit${r.suffix}_zoom_out`, '<strong>B · orbit phase.</strong> As the camera swings round, Lyra invents the stair\'s far side.')}</div>
+      <div class="two" style="margin-top:14px">${video(`A_zoom${r.suffix}_zoom_in`, 'A · zoom-in phase (81 frames).')}${video(`B_orbit${r.suffix}_zoom_in`, 'B · approach phase (81 frames).')}</div>
+      <h3>Output 1: the generated walkthrough video</h3>
+      <div class="two">${video(`A_zoom${r.suffix}_combined`, 'A · zoom: 322 frames, 20 s, 832×480.')}${video(`B_orbit${r.suffix}_combined`, 'B · orbit: 322 frames, 20 s, 832×480.')}</div>
+      <h3>Intermediate output: camera paths recovered by VIPE</h3>
+      <figure><img src="${L}/${r.paths}" alt="Top-down plot of the recovered camera paths" loading="lazy" style="background:#fffdf8"><figcaption>The red square is the frame that matches your photo.</figcaption></figure>
+      <h3>Output 2: the 3D model, rendered by NVIDIA along the path</h3>
+      <div class="two">${video(`A_zoom${r.suffix}_gs_trajectory`, 'A · render of the reconstructed 3D splat, not the generated video.')}${video(`B_orbit${r.suffix}_gs_trajectory`, 'B · render of the reconstructed 3D splat. Black corners: areas no frame covered.')}</div>
+      <p style="margin-top:12px"><a class="open" href="../splat/?model=${r.viewA}">Open 3D model · A zoom</a><a class="open" href="../splat/?model=${r.viewB}">Open 3D model · B orbit</a></p>
+      <h3>Time and cost of this run</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Step (per H100; both videos ran in parallel)</th><th>When (IST)</th><th class="num">Duration</th><th class="num">Cost per run</th></tr></thead>
+        <tbody>${r.timeline.map(([s, w, d, sec]) => `<tr><td>${s}</td><td>${w}</td><td class="num">${d}</td><td class="num">${money(sec)}</td></tr>`).join('')}</tbody>
+        <tfoot>
+          <tr><td>One 3D world (A or B)</td><td></td><td class="num">${Math.round(total / 60)} min</td><td class="num">${money(total)}</td></tr>
+          <tr><td>Both 3D worlds (2 × H100 in parallel)</td><td></td><td class="num">${Math.round(total / 60)} min wall</td><td class="num">${money(2 * total)}</td></tr>
+        </tfoot>
+      </table></div>`;
+  }
+  const f = RUNS.fast, F = RUNS.full;
+  const ft = f.timeline.reduce((a, t) => a + t[3], 0), Ft = F.timeline.reduce((a, t) => a + t[3], 0);
+  $('cmp-rows').innerHTML = [
+    ['Sampling', '4 steps, DMD LoRA, no CFG', '50 steps, CFG 5'],
+    ['Video generation (322 frames)', '~5.6 min', '~38 min'],
+    ['Total GPU time per 3D world', `${Math.round(ft / 60)} min`, `${Math.round(Ft / 60)} min`],
+    ['Compute cost per 3D world', money(ft), money(Ft)],
+    ['Gaussians in the 3D model', '11,153,408', '11,153,408'],
+    ['Web-viewer file (thinned .spz)', 'zoom 59 MB · orbit 61 MB', 'zoom 59 MB · orbit 53 MB'],
+  ].map(([a, b, c]) => `<tr><td>${a}</td><td class="num">${b}</td><td class="num">${c}</td></tr>`).join('');
 </script>
 </body>
 </html>
