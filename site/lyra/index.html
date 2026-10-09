@@ -47,6 +47,7 @@
     .run > h2 { margin-top:16px; }
     .badge { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 9px; border-radius:999px; color:var(--accent-ink); }
     .fast .badge, .badge.fast { background:var(--fast); } .full .badge, .badge.full { background:var(--full); }
+    .cmp-grid { display:grid; gap:14px; } .cmp-grid img { width:100%; display:block; border-radius:10px; border:1px solid var(--line); }
     .stats { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin: 10px 0 6px; }
     .stat { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
     .stat b { display:block; font-size:22px; line-height:1.2; } .stat span { color:var(--muted); font-size:13px; }
@@ -62,6 +63,7 @@
   <div class="jump">
     <a href="#fast" style="color:var(--fast)">Distilled (fast) run →</a>
     <a href="#full" style="color:var(--full)">Full-quality run →</a>
+    <a href="#refine" style="color:var(--full)">Refined 3D model →</a>
     <a href="#compare" style="color:var(--muted)">Side-by-side comparison →</a>
   </div>
 
@@ -117,6 +119,39 @@
     <p>Lyra's recommended setting: <strong>50 sampling steps with classifier-free guidance (scale 5)</strong>, no distillation LoRA. About 7× slower than distilled in our runs.</p>
     <div class="stats" data-stats="full"></div>
     <div data-run="full"></div>
+
+    <h3 id="refine" style="margin-top:30px; font-size:19px">Improving the 3D model: original vs refined</h3>
+    <p>Lyra's 3D model is softer than its own video; NVIDIA's own render of it shows the same, and others report it too (<a href="https://github.com/nv-tlabs/lyra/issues/59">lyra#59</a>). As an experiment we refined the <strong>full-quality orbit model</strong> (B) with standard 3D Gaussian Splatting optimisation (<a href="https://github.com/nerfstudio-project/gsplat">gsplat</a>): start from Lyra's 11.2 M Gaussians and camera poses, then adjust them so renders match the video frames.</p>
+    <ul class="plain">
+      <li><strong>Fair test:</strong> every 10th frame (32 of 322) was held out and never trained on; scores below are on those frames. Our render of Lyra's original model matched NVIDIA's own render at 38.8 dB PSNR, close to pixel-identical, so the “original” here is exactly Lyra's output.</li>
+      <li><strong>Recipe:</strong> 3,000 steps, 0.8 × L1 + 0.2 × D-SSIM loss (the original 3DGS loss), low learning rates, no new Gaussians added; the best checkpoint by held-out score was kept (the last one).</li>
+    </ul>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Scored against Lyra's video on 32 held-out frames</th><th class="num">PSNR (higher = closer)</th><th class="num">SSIM (higher = closer)</th></tr></thead>
+      <tbody>
+        <tr><td>Lyra original 3D model</td><td class="num">15.67 dB</td><td class="num">0.365</td></tr>
+        <tr><td><strong>Refined 3D model</strong></td><td class="num"><strong>20.92 dB (+5.3)</strong></td><td class="num"><strong>0.662 (+81%)</strong></td></tr>
+        <tr><td class="muted">Refined, on training frames (overfitting check)</td><td class="num muted">21.16 dB</td><td class="num muted">0.685</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted" style="margin-top:8px">Held-out frames improved almost as much as training frames, so this is a better 3D model, not memorised frames. It still cannot add detail no frame showed, and views far off the camera path are unchanged.</p>
+    <h3>Held-out frames: video · original · refined</h3>
+    <div class="cmp-grid">
+      <figure><img data-asset="refine/compare_frame055.jpg" alt="Frame 55: video, original 3D model, refined 3D model" loading="lazy"><figcaption>Frame 55 · left: Lyra's video · middle: original 3D model · right: refined 3D model</figcaption></figure>
+      <figure><img data-asset="refine/compare_frame155.jpg" alt="Frame 155: video, original 3D model, refined 3D model" loading="lazy"><figcaption>Frame 155 · video · original · refined</figcaption></figure>
+      <figure><img data-asset="refine/compare_frame255.jpg" alt="Frame 255: video, original 3D model, refined 3D model" loading="lazy"><figcaption>Frame 255 · video · original · refined</figcaption></figure>
+    </div>
+    <h3>Whole camera path: original (left) vs refined (right)</h3>
+    <figure><video data-asset="refine/refined_render.mp4" controls muted loop playsinline preload="metadata"></video><figcaption>Both 3D models rendered with the same renderer and cameras for all 322 frames.</figcaption></figure>
+    <p style="margin-top:12px"><a class="open" href="../splat/?model=lyra_B_full">Open 3D · original (full)</a><a class="open" href="../splat/?model=lyra_B_refined">Open 3D · refined</a></p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Refinement step (one H100)</th><th class="num">Duration</th><th class="num">Cost</th></tr></thead>
+      <tbody>
+        <tr><td>Load model + video, render check, baseline scores</td><td class="num">27 s</td><td class="num">$0.03</td></tr>
+        <tr><td>3,000 refinement steps (6 held-out evaluations included)</td><td class="num">2 m 16 s</td><td class="num">$0.15</td></tr>
+      </tbody>
+      <tfoot><tr><td>Total</td><td class="num">2 m 43 s</td><td class="num">≈ $0.18</td></tr></tfoot>
+    </table></div>
   </section>
 
   <h2 id="compare"><span class="n">3</span>Distilled vs full quality, side by side</h2>
@@ -162,6 +197,7 @@
   const L = `${ASSETS}/lyra`;
   const $ = (id) => document.getElementById(id);
   $('input-img').src = `${L}/input_1280x720.jpg`;
+  document.querySelectorAll('[data-asset]').forEach((el) => { el.src = `${L}/${el.dataset.asset}`; });
   $('cmp-fast').src = `${L}/B_orbit_fast_combined.mp4`;
   $('cmp-full').src = `${L}/B_orbit_combined.mp4`;
   fetch(`${L}/captions.json`).then((r) => r.json()).then((c) => { $('caption-zoom').textContent = c.zoom; })

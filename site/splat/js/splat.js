@@ -25,6 +25,9 @@ export const MODELS = {
             photo: { pos: [-0.027, -1.46, -7.673], target: [-0.028, -1.442, -10.673], up: [0.003, 1.0, 0.006], fov: 39.6 } },
   lyra_B_full: { file: `${ASSETS}/models/lyra_B_orbit.spz`, label: 'NVIDIA Lyra 2.0 · orbit · full quality', scale: 1,
             photo: { pos: [-4.81, 0.041, -3.274], target: [-2.109, -0.0, -4.578], up: [0.008, 1.0, -0.014], fov: 32.1 } },
+  // Full-quality orbit splat after 3,000 gsplat refinement steps against Lyra's own video (world-model/lyra/modal_refine.py).
+  lyra_B_refined: { file: `${ASSETS}/models/lyra_B_orbit_refined.spz`, label: 'NVIDIA Lyra 2.0 · orbit · full + refined', scale: 1,
+            photo: { pos: [-4.81, 0.041, -3.274], target: [-2.109, -0.0, -4.578], up: [0.008, 1.0, -0.014], fov: 32.1 } },
   // Same splats with their own staircase cut out, for the hybrid.
   hyworld_bg: { file: `${ASSETS}/models/hyworld_bg.splat`, label: 'HY-World 2.0, stair removed', scale: 9.15 },
   sharp_bg: { file: `${ASSETS}/models/sharp_bg.splat`, label: 'SHARP, stair removed', scale: 1.08 },

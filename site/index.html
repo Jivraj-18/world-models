@@ -98,8 +98,8 @@
       <div class="body">
         <div><span class="tag">world model</span><span class="tag">NVIDIA Lyra 2.0</span><span class="tag">distilled: ~11 min · ~$0.74 per world</span><span class="tag">full quality: ~44 min · ~$2.92 per world</span></div>
         <h3>Lyra 2.0: photo → generated walkthrough video → 3D world</h3>
-        <p>The strongest result so far. Lyra generates a camera walkthrough video (zoom or orbit) from the one photo, then reconstructs it into an 11-million-Gaussian 3D scene. It keeps the filigree, the gothic gate and the glass roof, and invents a believable far side of the stair.</p>
-        <div><a class="open" href="lyra/">Read the full story: distilled vs full quality, time, cost</a> <a class="open" href="splat/?model=lyra_B_full" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · full</a> <a class="open" href="splat/?model=lyra_B" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · distilled</a></div>
+        <p>The strongest result so far. Lyra generates a camera walkthrough video (zoom or orbit) from the one photo, then reconstructs it into an 11-million-Gaussian 3D scene. It keeps the filigree, the gothic gate and the glass roof, and invents a believable far side of the stair. A short gsplat refinement against its own video then sharpened the 3D model by +5.3 dB on held-out frames, for about $0.18.</p>
+        <div><a class="open" href="lyra/">Read the full story: distilled vs full quality, time, cost</a> <a class="open" href="splat/?model=lyra_B_refined" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · refined</a> <a class="open" href="splat/?model=lyra_B_full" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · full</a> <a class="open" href="splat/?model=lyra_B" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · distilled</a></div>
       </div>
     </article>
     <article class="card">
