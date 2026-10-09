@@ -15,11 +15,11 @@ export const MODELS = {
   marble: { file: `${ASSETS}/models/marble.spz`, label: 'World Labs Marble 1.1 Plus', scale: 2.0108, note: 'single image + prompt → full 360° generated world' },
   // HY-World 2.1 world generated on 3d.hunyuan.tencent.com (Image/scene mode) and exported as .spz.
   hyworld21: { file: `${ASSETS}/models/hyworld21.splat`, label: 'Tencent HY-World 2.1 (web)', scale: 1, frame: 'zup', note: 'single image → generated explorable world' },
-  // NVIDIA Lyra 2.0 (generated video -> reconstructed 3DGS, 1.2M of 11.2M splats kept). `photo` is the
+  // NVIDIA Lyra 2.0 (generated video -> reconstructed 3DGS). ~4M of 11.2M splats, thinned per voxel by world-model/ply_to_spz.py. `photo` is the
   // camera of the reconstructed frame that matches the input photo (world-model/outputs/.../photo_cameras.json).
-  lyra_A: { file: `${ASSETS}/models/lyra_A_zoom_fast.splat`, label: 'NVIDIA Lyra 2.0 (zoom, fast)', scale: 1,
+  lyra_A: { file: `${ASSETS}/models/lyra_A_zoom_fast.spz`, label: 'NVIDIA Lyra 2.0 (zoom, fast)', scale: 1,
             photo: { pos: [-0.015, -1.567, -8.932], target: [-0.027, -1.58, -11.932], up: [-0.036, 0.999, -0.004], fov: 37.9 } },
-  lyra_B: { file: `${ASSETS}/models/lyra_B_orbit_fast.splat`, label: 'NVIDIA Lyra 2.0 (orbit, fast)', scale: 1,
+  lyra_B: { file: `${ASSETS}/models/lyra_B_orbit_fast.spz`, label: 'NVIDIA Lyra 2.0 (orbit, fast)', scale: 1,
             photo: { pos: [-3.993, 0.057, -2.547], target: [-1.301, 0.008, -3.87], up: [0.012, 1.0, -0.014], fov: 37.8 } },
   // Same splats with their own staircase cut out, for the hybrid.
   hyworld_bg: { file: `${ASSETS}/models/hyworld_bg.splat`, label: 'HY-World 2.0, stair removed', scale: 9.15 },
