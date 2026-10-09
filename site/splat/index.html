@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palm House — World Model Splat</title>
+  <link rel="stylesheet" href="../assets/viewer.css">
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js"
+  } }
+  </script>
+</head>
+<body>
+  <div id="view"></div>
+  <div class="bar">
+    <a class="back" href="../">← Compare</a>
+    <h1 id="title">World model</h1>
+    <button data-model="hyworld">HY-World 2.0</button>
+    <button data-model="sharp">SHARP</button>
+    <button data-model="marble">Marble</button>
+    <button data-model="hyworld21">HY-World 2.1</button>
+    <button data-model="lyra_A">Lyra zoom</button>
+    <button data-model="lyra_B">Lyra orbit</button>
+    <span class="sep"></span>
+    <button id="photo">Photo view</button>
+    <button id="wide">Step back</button>
+  </div>
+  <div id="status">Loading splat…</div>
+  <div id="hint">Drag to orbit · scroll to zoom · right-drag to pan. Only what the photo saw exists: move far and it falls apart.</div>
+  <div class="credit">Generated from a photo by <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">Flocci Nivis</a>, CC BY-SA 4.0</div>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { MODELS, addSplat, splatPlacement } from './js/splat.js';
+
+    const params = new URLSearchParams(location.search);
+    const name = MODELS[params.get('model')] ? params.get('model') : 'hyworld';
+    document.getElementById('title').textContent = 'World model: ' + MODELS[name].label;
+    document.querySelectorAll('[data-model]').forEach((b) => {
+      b.classList.toggle('on', b.dataset.model === name);
+      b.onclick = () => { location.search = '?model=' + b.dataset.model; };
+    });
+
+    const container = document.getElementById('view');
+    const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(params.get('bg') === 'dark' ? 0x2a2d27 : 0xe6e9e1); // the photo's hazy sky tone, so gaps between splats read as light, not black
+
+    // The source photo's camera sits at the origin looking down -z.
+    const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.01, 500);
+    const orbit = new OrbitControls(camera, renderer.domElement);
+    orbit.enableDamping = true;
+    // Models can carry the exact camera of the frame matching the source photo (Lyra); others start at the origin.
+    const pc = MODELS[name].photo;
+    const photoView = () => {
+      if (pc) { camera.position.set(...pc.pos); camera.up.set(...pc.up); orbit.target.set(...pc.target); camera.fov = pc.fov; camera.updateProjectionMatrix(); }
+      else { camera.position.set(0, 0, 0.01); orbit.target.set(0, 0, -4); }
+      orbit.update();
+    };
+    const wideView = () => {
+      if (pc) {
+        const p = new THREE.Vector3(...pc.pos), t = new THREE.Vector3(...pc.target);
+        const back = p.clone().sub(t).normalize();
+        camera.position.copy(p.addScaledVector(back, 6).add(new THREE.Vector3(2, 2, 0))); orbit.target.copy(t);
+      } else { camera.position.set(3.5, 1.5, 3); orbit.target.set(0, 0, -4); }
+      orbit.update();
+    };
+    document.getElementById('photo').onclick = photoView;
+    document.getElementById('wide').onclick = wideView;
+    photoView();
+
+    const status = document.getElementById('status');
+    addSplat(scene, name, splatPlacement(new THREE.Matrix4(), MODELS[name].scale, MODELS[name].frame), (p) => (status.textContent = `Loading splat… ${Math.round(p)}%`))
+      .then(() => { status.textContent = ''; window.__ready = true; })
+      .catch((e) => { status.textContent = 'Could not load this splat: ' + e.message; window.__ready = true; });
+
+    addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+    renderer.setAnimationLoop(() => { orbit.update(); renderer.render(scene, camera); });
+    // Extra presets for exploring full 360° worlds such as Marble's.
+    const presets = {
+      wide: wideView,
+      up: () => { camera.position.set(0, 0, 0.01); orbit.target.set(0, 4, -1.5); orbit.update(); },
+      behind: () => { camera.position.set(0, 0, -0.01); orbit.target.set(0, 0, 4); orbit.update(); },
+      far: () => { camera.position.set(14, 12, 22); orbit.target.set(0, 0, 0); orbit.update(); },
+      top: () => { camera.position.set(0, 30, 0.01); orbit.target.set(0, 0, 0); orbit.update(); },
+      side: () => { camera.position.set(-4, 0.5, -3.5); orbit.target.set(0, 1, -6); orbit.update(); },
+    };
+    presets[params.get('view')]?.();
+  </script>
+</body>
+</html>

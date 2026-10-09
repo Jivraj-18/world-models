@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palm House — Assembled Scene</title>
+  <link rel="stylesheet" href="../assets/viewer.css">
+  <style>
+    .panel { position: fixed; right: 16px; top: 84px; width: 250px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+    .panel h2 { font-size: 13px; margin: 0 0 6px; }
+    .panel label { display: flex; justify-content: space-between; gap: 8px; margin: 4px 0; font-size: 13px; }
+    @media (max-width: 640px) { .panel { top: auto; bottom: 64px; left: 16px; width: auto; } }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  } }
+  </script>
+</head>
+<body>
+  <div id="view"></div>
+  <div class="bar">
+    <a class="back" href="../">← Compare</a>
+    <h1>Assembled from one photo</h1>
+    <button data-view="photo">Photo view</button>
+    <button data-view="near">Close up</button>
+    <button data-view="around">Walk round</button>
+  </div>
+  <div class="panel">
+    <h2>Pieces (all from the one photo)</h2>
+    <label>Stair <select id="stair"></select></label>
+    <label>Palms <select id="palm"></select></label>
+    <label>Panorama surroundings <input type="checkbox" id="pano" checked></label>
+  </div>
+  <div id="status"></div>
+  <div id="hint">Surroundings: Marble's 360° panorama. Stair and palms: image-to-3D meshes. Layout and lighting: code.</div>
+  <div class="credit">All generated from a photo by <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">Flocci Nivis</a>, CC BY-SA 4.0</div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

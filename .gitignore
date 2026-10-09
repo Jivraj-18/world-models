@@ -1,0 +1,22 @@
+# Code only. Data, models, renders and videos live in Cloudflare R2 (~/r2/world-models, uploaded with r2up).
+test-images/
+world-model/outputs/
+world-model/inputs/
+world-model/ml-sharp/
+world-model/lyra/inputs/*.png
+site/models/
+site/assets/*.jpg
+site/assets/shots/
+*.ply
+*.splat
+*.spz
+*.glb
+*.mp4
+*.npz
+*.log
+resources.csv
+__pycache__/
+.venv/
+node_modules/
+tools/package-lock.json
+.wrangler/

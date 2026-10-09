@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palm House — Coded Scene</title>
+  <link rel="stylesheet" href="../assets/viewer.css">
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  } }
+  </script>
+</head>
+<body>
+  <div id="view"></div>
+  <div class="bar">
+    <a class="back" href="../">← Compare</a>
+    <h1>Coding agent: hand-coded Three.js</h1>
+    <button data-view="photo">Photo view</button>
+    <button data-view="overview">Overview</button>
+    <span class="sep"></span>
+    <button data-mode="orbit">Orbit</button>
+    <button data-mode="climb">Climb the stair</button>
+    <button data-mode="walk">Walk</button>
+  </div>
+  <div id="hint"></div>
+  <div class="credit">Modelled from a photo by <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">Flocci Nivis</a>, CC BY-SA 4.0</div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

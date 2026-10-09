@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palm House — Hybrid Scene</title>
+  <link rel="stylesheet" href="../assets/viewer.css">
+  <style>
+    .panel { position: fixed; right: 16px; top: 84px; width: 250px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+    .panel h2 { font-size: 13px; margin: 0 0 6px; }
+    .panel label { display: flex; justify-content: space-between; gap: 8px; margin: 4px 0; font-size: 13px; }
+    .panel input[type=range] { width: 120px; }
+    @media (max-width: 640px) { .panel { top: auto; bottom: 64px; right: 16px; left: 16px; width: auto; } }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js"
+  } }
+  </script>
+</head>
+<body>
+  <div id="view"></div>
+  <div class="bar">
+    <a class="back" href="../">← Compare</a>
+    <h1>Hybrid: coded structure + world-model splat</h1>
+    <button data-view="photo">Photo view</button>
+    <button data-view="side">Side view</button>
+    <span class="sep"></span>
+    <button data-mode="orbit">Orbit</button>
+    <button data-mode="climb">Climb the stair</button>
+  </div>
+  <div class="panel">
+    <h2>Layers</h2>
+    <label>Coded staircase <input type="checkbox" id="lStair" checked></label>
+    <label>Coded glasshouse <input type="checkbox" id="lHouse"></label>
+    <label>Coded plants <input type="checkbox" id="lPlants"></label>
+    <label>World-model splat <input type="checkbox" id="lSplat" checked></label>
+    <h2 style="margin-top:10px">Splat</h2>
+    <label>Source <select id="src"><option value="marble">Marble, full</option><option value="sharp_bg">SHARP, stair cut out</option><option value="sharp">SHARP, full</option><option value="hyworld_bg">HY-World, stair cut out</option><option value="hyworld">HY-World, full</option></select></label>
+    <label>Scale × <input type="range" id="scale" min="0.3" max="3" step="0.05" value="1"></label>
+    <label>Depth shift <input type="range" id="shift" min="-6" max="6" step="0.1" value="0"></label>
+  </div>
+  <div id="status"></div>
+  <div id="hint"></div>
+  <div class="credit">Splat generated from a photo by <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">Flocci Nivis</a>, CC BY-SA 4.0</div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

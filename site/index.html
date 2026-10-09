@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palm House: Code vs World Model</title>
+  <meta name="description" content="One photo of the Schönbrunn Palm House turned into 3D three ways: a coding agent writing Three.js, free world models (HY-World 2.0, Apple SHARP), and a hybrid of both.">
+  <style>
+    :root {
+      --bg: #f6f3ec; --surface: #fffdf8; --ink: #24231f; --muted: #6a665b; --line: #e2dccd;
+      --accent: #3f6a35; --accent-ink: #fff; --good: #2f6b3a; --mid: #8a6a12; --bad: #9a3b2c; --chip: #efe9da;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #151613; --surface: #1d1f1a; --ink: #ebe8de; --muted: #a39f92; --line: #34362f;
+        --accent: #8fbf7a; --accent-ink: #13200f; --good: #8fcf8a; --mid: #e0bd5c; --bad: #ec8f7d; --chip: #2a2c25;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #151613; --surface: #1d1f1a; --ink: #ebe8de; --muted: #a39f92; --line: #34362f;
+      --accent: #8fbf7a; --accent-ink: #13200f; --good: #8fcf8a; --mid: #e0bd5c; --bad: #ec8f7d; --chip: #2a2c25;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+    h1 { font-size: clamp(26px, 4vw, 38px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -0.01em; }
+    h2 { font-size: 22px; margin: 48px 0 12px; }
+    h3 { font-size: 17px; margin: 0 0 4px; }
+    p { margin: 0 0 12px; }
+    a { color: var(--accent); }
+    .lede { color: var(--muted); max-width: 760px; font-size: 17px; }
+    .hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start; margin-top: 24px; }
+    .hero img { width: 100%; border-radius: 12px; display: block; border: 1px solid var(--line); }
+    .hero figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .q { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+    .q ol { margin: 8px 0 0; padding-left: 20px; }
+    .q li { margin-bottom: 6px; }
+    .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+    .card .imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); }
+    .card .imgs figure { margin: 0; position: relative; }
+    .card .imgs img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block; }
+    .card .imgs figcaption { position: absolute; left: 6px; bottom: 6px; font-size: 11px; background: rgba(0,0,0,.55); color: #fff; padding: 2px 6px; border-radius: 4px; }
+    .card .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .tag { display: inline-block; font-size: 12px; background: var(--chip); color: var(--muted); border-radius: 999px; padding: 2px 9px; margin-right: 4px; }
+    .card p { color: var(--muted); font-size: 15px; margin: 0; }
+    .open { margin-top: auto; align-self: flex-start; background: var(--accent); color: var(--accent-ink); text-decoration: none; padding: 7px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14.5px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: 13px; color: var(--muted); font-weight: 600; background: var(--bg); }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { font-weight: 600; }
+    .g { color: var(--good); } .m { color: var(--mid); } .b { color: var(--bad); }
+    .findings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .findings div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    .findings p { color: var(--muted); font-size: 15px; margin: 0; }
+    .prompt { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+    .prompt header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .prompt pre { white-space: pre-wrap; margin: 0; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+    .prompt small { color: var(--muted); display: block; margin-top: 6px; }
+    button.copy { font: inherit; font-size: 13px; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 4px 10px; cursor: pointer; }
+    button.copy:hover { border-color: var(--accent); }
+    code { font: 13.5px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--chip); padding: 1px 5px; border-radius: 4px; }
+    ul.plain { padding-left: 20px; color: var(--muted); }
+    footer { margin-top: 48px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+    @media (max-width: 860px) { .hero, .cards, .findings { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>One photo, three ways to make it 3D</h1>
+  <p class="lede">A single photograph of the cast-iron spiral staircase in Vienna's Schönbrunn Palm House, rebuilt as an explorable 3D scene by a coding agent writing Three.js, by world models (including NVIDIA Lyra 2.0 on rented H100s), and by a hybrid of the two. Everything here ran on free tiers and free credits.</p>
+
+  <section class="hero">
+    <figure style="margin:0">
+      <img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/palm_house.jpg" alt="White cast-iron spiral staircase among fan palms under a curved glass roof">
+      <figcaption>The input: <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">“20250501 Palm House Schönbrunn 02”</a> by Flocci Nivis, CC BY-SA 4.0.</figcaption>
+    </figure>
+    <div class="q">
+      <h3>The question</h3>
+      <p>Do world models make 3D scenes better than a coding agent alone?</p>
+      <ol>
+        <li><strong>Coding agent:</strong> Claude Code looks at the photo and writes the scene procedurally: stair, glasshouse, palms.</li>
+        <li><strong>World model:</strong> the photo goes to Tencent HY-World 2.0 and Apple SHARP on free Hugging Face GPUs, and to NVIDIA Lyra 2.0 on Modal H100s; each returns a 3D Gaussian splat.</li>
+        <li><strong>Hybrid:</strong> the coded staircase replaces the world model's own stair inside its splat, so photographic plants surround real, climbable geometry.</li>
+      </ol>
+    </div>
+  </section>
+
+  <h2>Explore the results</h2>
+  <div class="cards">
+    <article class="card" style="grid-column: 1 / -1">
+      <div class="imgs">
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/lyra_photo.jpg" alt="Lyra 3D splat rendered from the photo viewpoint" loading="lazy"><figcaption>3D render, photo view</figcaption></figure>
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/lyra_side.jpg" alt="Lyra 3D splat rendered from the side of the stair" loading="lazy"><figcaption>3D render, around the stair</figcaption></figure>
+      </div>
+      <div class="body">
+        <div><span class="tag">world model</span><span class="tag">NVIDIA Lyra 2.0</span><span class="tag">fast mode</span><span class="tag">~10 min · ~$1 per world</span></div>
+        <h3>Lyra 2.0: photo → generated walkthrough video → 3D world</h3>
+        <p>The strongest result so far. Lyra generates a camera walkthrough video (zoom or orbit) from the one photo, then reconstructs it into an 11-million-Gaussian 3D scene. It keeps the filigree, the gothic gate and the glass roof, and invents a believable far side of the stair.</p>
+        <div><a class="open" href="lyra/">Read the full story: inputs, steps, time, cost</a> <a class="open" href="splat/?model=lyra_B" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">Open 3D · orbit</a> <a class="open" href="splat/?model=lyra_A" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">Open 3D · zoom</a></div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="imgs">
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/coded_photo.jpg" alt="Coded scene from the photo viewpoint" loading="lazy"><figcaption>photo view</figcaption></figure>
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/coded_overview.jpg" alt="Coded scene from outside the glasshouse" loading="lazy"><figcaption>step back</figcaption></figure>
+      </div>
+      <div class="body">
+        <div><span class="tag">coding agent</span><span class="tag">Three.js</span></div>
+        <h3>Hand-coded scene</h3>
+        <p>About 1,000 lines of procedural code: a parametric spiral stair, a ribbed glass dome and instanced palms. Works from every angle; you can walk the floor and climb to the top gallery. It looks stylised next to the photo.</p>
+        <a class="open" href="coded/">Open the coded scene</a>
+      </div>
+    </article>
+    <article class="card">
+      <div class="imgs">
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/sharp_photo.jpg" alt="SHARP splat from the photo viewpoint" loading="lazy"><figcaption>photo view</figcaption></figure>
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/sharp_wide.jpg" alt="SHARP splat from the side, revealing a thin shell" loading="lazy"><figcaption>step back</figcaption></figure>
+      </div>
+      <div class="body">
+        <div><span class="tag">world model</span><span class="tag">Apple SHARP</span></div>
+        <h3>SHARP Gaussian splat</h3>
+        <p>The most photographic from where the photo was taken. Step aside and it turns out to be a 2.5D shell: nothing behind the stair, filigree smoothed away, glass roof missing.</p>
+        <a class="open" href="splat/?model=sharp">Open the SHARP splat</a>
+      </div>
+    </article>
+    <article class="card">
+      <div class="imgs">
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/hyworld_photo.jpg" alt="HY-World splat from the photo viewpoint" loading="lazy"><figcaption>photo view</figcaption></figure>
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/hyworld_wide.jpg" alt="HY-World splat from the side" loading="lazy"><figcaption>step back</figcaption></figure>
+      </div>
+      <div class="body">
+        <div><span class="tag">world model</span><span class="tag">HY-World 2.0</span></div>
+        <h3>HY-World 2.0 splat</h3>
+        <p>Keeps the pierced riser pattern, the gothic gate and the handrail sharper than SHARP, but drops the sky and the glazing entirely, and the plants are sparse.</p>
+        <a class="open" href="splat/?model=hyworld">Open the HY-World splat</a>
+      </div>
+    </article>
+    <article class="card">
+      <div class="imgs">
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/hybrid_photo.jpg" alt="Hybrid: coded stair inside the SHARP splat" loading="lazy"><figcaption>photo view</figcaption></figure>
+        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/hybrid_side.jpg" alt="Hybrid from the side" loading="lazy"><figcaption>side view</figcaption></figure>
+      </div>
+      <div class="body">
+        <div><span class="tag">hybrid</span><span class="tag">code + splat</span></div>
+        <h3>Coded stair inside the splat</h3>
+        <p>The world model's own stair is cut out and the coded one takes its place, aligned to the photographer's position. Photographic palms and light, plus a stair you can climb and edit.</p>
+        <a class="open" href="hybrid/">Open the hybrid</a>
+      </div>
+    </article>
+  </div>
+
+  <h2>Scorecard</h2>
+  <p class="lede" style="font-size:15px">Judged by eye in the viewers on 9 October 2026; no automated metrics yet.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>What we checked</th><th>Coding agent</th><th>SHARP</th><th>HY-World 2.0</th><th>Lyra 2.0 (fast)</th><th>Hybrid</th></tr></thead>
+      <tbody>
+        <tr><td>Looks like the photo (from its viewpoint)</td><td class="m">Recognisable, stylised</td><td class="g">Near-photographic</td><td class="m">Stair sharp, sky and glass missing</td><td class="g">Photographic; filigree and roof kept</td><td class="g">Photographic plants, stylised stair</td></tr>
+        <tr><td>Holds up when you move</td><td class="g">Every angle</td><td class="b">Breaks after 1–2 m</td><td class="b">Breaks after 1–2 m</td><td class="g">Holds along the generated path</td><td class="m">Stair yes, plants break</td></tr>
+        <tr><td>Fine ironwork (filigree, balusters)</td><td class="m">Approximated by textures</td><td class="b">Smoothed away</td><td class="g">Pierced pattern kept</td><td class="g">Kept</td><td class="m">Coded approximation</td></tr>
+        <tr><td>Behind the stair / outside the frame</td><td class="g">Whole glasshouse built</td><td class="b">Empty</td><td class="b">Empty</td><td class="g">Invented (orbit run)</td><td class="m">Coded stair only</td></tr>
+        <tr><td>Walk and climb</td><td class="g">Yes</td><td class="b">No</td><td class="b">No</td><td class="b">No</td><td class="g">Yes (stair)</td></tr>
+        <tr><td>Editable (steps, radius, layout)</td><td class="g">Change a parameter</td><td class="b">No</td><td class="b">No</td><td class="b">No</td><td class="m">Stair only</td></tr>
+        <tr><td>Time to result</td><td>One agent session</td><td>~8 min (mostly GPU queue)</td><td>~14 min queue, 0.73 s inference</td><td>~10 min of one H100 (~$1)</td><td>Both, plus alignment</td></tr>
+        <tr><td>Download size</td><td>52 KB of code</td><td>16 MB (500k splats)</td><td>8.3 MB (271k splats)</td><td>38 MB (1.2M of 11.2M splats)</td><td>~15 MB</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>What this suggests</h2>
+  <div class="findings">
+    <div><h3>World models win the first look</h3><p>From the photo's own viewpoint, both splats beat hand-written code on realism, especially the foliage, which is the hardest thing to code.</p></div>
+    <div><h3>Generating a video first changes the picture</h3><p>Single-shot models (SHARP, HY-World 2.0) only know what the camera saw. Lyra generates the unseen views as video first, so its 3D has a believable back side. Code still wins on walking, climbing and editing.</p></div>
+    <div><h3>The hybrid is the useful one</h3><p>Let code own the structure you interact with and the world model own the texture-heavy surroundings. The two needed only a scale fit to line up: SHARP's metric depth matched the coded stair within 8%.</p></div>
+  </div>
+
+  <h2>World-model prompts to try</h2>
+  <p class="lede" style="font-size:15px">Prompts for hosted world models that generate whole explorable worlds rather than reconstructing one view. Upload <a href="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/palm_house.jpg">the photo</a> as the image input where the tool accepts one.</p>
+
+  <div class="prompt">
+    <header><h3>World Labs Marble (image + text, free plan: 4 worlds)</h3><button class="copy" data-copy="p1">Copy</button></header>
+    <pre id="p1">Interior of a 19th-century Victorian palm house conservatory in Vienna. At the centre, a white-painted cast-iron spiral staircase winds anticlockwise around a slender central column up to a circular gallery high under the roof. The stair has pierced filigree risers, scrolled side panels, beaded balusters and a curved handrail, with a gothic-arched iron gate at its base. Above, a tall curved glass roof on cream iron ribs, with scalloped overlapping glass panes and a large diagonal tubular iron beam. Dense tropical planting all around: Mediterranean fan palms, a tall dark conifer, ferns and broadleaf climbers. Bright, hazy daylight through the glass, soft shadows, a gravel path around the stair's base.</pre>
+    <small>World 1: photo + this prompt. World 2: the same with Expand on, to see what it invents behind the stair. World 3: block out a cylinder (stair) and a dome (roof) in Chisel first.</small>
+  </div>
+
+  <div class="prompt">
+    <header><h3>Text only (Marble, HY-World online, any text-to-world model)</h3><button class="copy" data-copy="p2">Copy</button></header>
+    <pre id="p2">A walkable Victorian glasshouse. In the middle stands a three-storey white cast-iron spiral staircase with perforated lace-like risers and slender turned balusters, rising to a round viewing gallery just below a soaring curved glass roof. Fan palms, tree ferns and climbing vines fill the space; a gravel path circles the stair. Midday sun diffused through old glass, warm cream ironwork, deep greens, gentle haze. Camera starts at ground level a few metres from the stair, looking up.</pre>
+    <small>Useful as a control: how much does the photo itself help compared with a description?</small>
+  </div>
+
+  <div class="prompt">
+    <header><h3>Interactive world models (Genie 3, LingBot World on Reactor, Odyssey)</h3><button class="copy" data-copy="p3">Copy</button></header>
+    <pre id="p3">First-person explorer inside a sunlit Victorian palm house. Ahead, a white cast-iron spiral staircase with filigree steps winds up to a gallery under the glass roof. Walk forward along the gravel path, circle the staircase once, then climb it to the top gallery and look out over the palm canopy.</pre>
+    <small>Score it on whether the staircase keeps the same shape as you circle it, and whether you can actually climb it.</small>
+  </div>
+
+  <h2>Reproduce</h2>
+  <ul class="plain">
+    <li><code>world-model/run_spaces.py</code> sends the photo to the HY-World 2.0 and SHARP Hugging Face Spaces (a free HF token raises the GPU quota).</li>
+    <li><code>world-model/ply_to_splat.py</code> converts each <code>.ply</code> to the compact <code>.splat</code> format used here.</li>
+    <li><code>world-model/cut_stair.py</code> fits each splat's scale to the coded stair and cuts out the world model's own stair for the hybrid.</li>
+    <li><code>site/coded/js/</code> holds the coded scene: <code>staircase.js</code>, <code>glasshouse.js</code>, <code>plants.js</code>.</li>
+  </ul>
+
+  <footer>
+    <p>Source photo: <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">Flocci Nivis</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. The splats and renders derived from it are shared under the same licence.</p>
+    <p>Apple SHARP outputs are produced under Apple's research-only model licence; HY-World 2.0 under Tencent's licence. This is a non-commercial research comparison. Viewers use <a href="https://threejs.org">Three.js</a> and <a href="https://github.com/mkkellogg/GaussianSplats3D">GaussianSplats3D</a>.</p>
+  </footer>
+</main>
+<script>
+  document.querySelectorAll('button.copy').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent); b.textContent = 'Copied'; }
+    catch { b.textContent = 'Select and copy'; }
+    setTimeout(() => (b.textContent = 'Copy'), 1600);
+  }));
+</script>
+</body>
+</html>
