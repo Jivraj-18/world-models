@@ -1,0 +1,20 @@
+// Dashboard check: screenshot, then click the first "Play video" and confirm the video starts playing.
+import { chromium } from 'playwright-core';
+const [url, out, w = '1400', h = '2200'] = process.argv.slice(2);
+const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--autoplay-policy=no-user-gesture-required'] });
+const p = await b.newPage({ viewport: { width: +w, height: +h } });
+const errs = [];
+p.on('pageerror', (e) => errs.push(e.message));
+await p.goto(url, { waitUntil: 'load' });
+await p.waitForTimeout(2500);
+await p.screenshot({ path: out });
+const rows = await p.$$eval('.model h3', (els) => els.map((e) => e.textContent));
+await p.click('.model .btn.play');
+await p.waitForTimeout(5000);
+const v = await p.$eval('.model .player video', (v) => ({ src: v.currentSrc.split('/').pop(), time: v.currentTime.toFixed(1), paused: v.paused, w: v.videoWidth }));
+await p.click('.model .player .tabs button:nth-child(2)');
+await p.waitForTimeout(3000);
+const v2 = await p.$eval('.model .player video', (v) => ({ src: v.currentSrc.split('/').pop(), time: v.currentTime.toFixed(1), paused: v.paused }));
+await p.screenshot({ path: out.replace('.png', '_playing.png') });
+console.log(JSON.stringify({ rows, firstVideo: v, afterTab: v2, walkLinks: await p.$$eval('a.btn.walk', (a) => a.map((x) => x.getAttribute('href') + (x.target ? ' [new tab]' : ''))), errors: errs }, null, 1));
+await b.close();

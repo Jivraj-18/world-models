@@ -48,6 +48,13 @@
     .badge { font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 9px; border-radius:999px; color:var(--accent-ink); }
     .fast .badge, .badge.fast { background:var(--fast); } .full .badge, .badge.full { background:var(--full); }
     .cmp-grid { display:grid; gap:14px; } .cmp-grid img { width:100%; display:block; border-radius:10px; border:1px solid var(--line); }
+    .vtabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 8px; }
+    .vtabs button { font:inherit; font-size:13px; border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:999px; padding:4px 12px; cursor:pointer; }
+    .vtabs button.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+    .vplayer video { width:100%; display:block; border-radius:10px; border:1px solid var(--line); background:#000; }
+    .vcap { font-size:13px; color:var(--muted); margin:6px 0 0; }
+    details.more { margin-top:16px; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; }
+    details.more summary { cursor:pointer; font-weight:600; font-size:14.5px; color:var(--accent); }
     .stats { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin: 10px 0 6px; }
     .stat { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
     .stat b { display:block; font-size:22px; line-height:1.2; } .stat span { color:var(--muted); font-size:13px; }
@@ -142,7 +149,7 @@
       <figure><img data-asset="refine/compare_frame255.jpg" alt="Frame 255: video, original 3D model, refined 3D model" loading="lazy"><figcaption>Frame 255 · video · original · refined</figcaption></figure>
     </div>
     <h3>Whole camera path: original (left) vs refined (right)</h3>
-    <figure><video data-asset="refine/refined_render.mp4" controls muted loop playsinline preload="metadata"></video><figcaption>Both 3D models rendered with the same renderer and cameras for all 322 frames.</figcaption></figure>
+    <figure><video data-asset="refine/refined_render.mp4" data-poster="posters/refined_render.jpg" controls muted loop playsinline preload="none"></video><figcaption>Both 3D models rendered with the same renderer and cameras for all 322 frames.</figcaption></figure>
     <p style="margin-top:12px"><a class="open" href="../splat/?model=lyra_B_full">Open 3D · original (full)</a><a class="open" href="../splat/?model=lyra_B_refined">Open 3D · refined</a></p>
     <div class="table-wrap"><table>
       <thead><tr><th>Refinement step (one H100)</th><th class="num">Duration</th><th class="num">Cost</th></tr></thead>
@@ -157,8 +164,8 @@
   <h2 id="compare"><span class="n">3</span>Distilled vs full quality, side by side</h2>
   <p>The same moment of each orbit walkthrough. Use the 3D viewer buttons in each run section to compare the reconstructed models.</p>
   <div class="two">
-    <figure><video id="cmp-fast" controls muted loop playsinline preload="metadata"></video><figcaption><span class="badge fast">Distilled</span> B · orbit, generated video</figcaption></figure>
-    <figure><video id="cmp-full" controls muted loop playsinline preload="metadata"></video><figcaption><span class="badge full">Full quality</span> B · orbit, generated video</figcaption></figure>
+    <figure><video id="cmp-fast" controls muted loop playsinline preload="none"></video><figcaption><span class="badge fast">Distilled</span> B · orbit, generated video</figcaption></figure>
+    <figure><video id="cmp-full" controls muted loop playsinline preload="none"></video><figcaption><span class="badge full">Full quality</span> B · orbit, generated video</figcaption></figure>
   </div>
   <div class="table-wrap" style="margin-top:16px"><table>
     <thead><tr><th>Per 3D world (one H100)</th><th class="num">Distilled</th><th class="num">Full quality</th></tr></thead>
@@ -197,9 +204,9 @@
   const L = `${ASSETS}/lyra`;
   const $ = (id) => document.getElementById(id);
   $('input-img').src = `${L}/input_1280x720.jpg`;
-  document.querySelectorAll('[data-asset]').forEach((el) => { el.src = `${L}/${el.dataset.asset}`; });
-  $('cmp-fast').src = `${L}/B_orbit_fast_combined.mp4`;
-  $('cmp-full').src = `${L}/B_orbit_combined.mp4`;
+  document.querySelectorAll('[data-asset]').forEach((el) => { el.src = `${L}/${el.dataset.asset}`; if (el.dataset.poster) el.poster = `${L}/${el.dataset.poster}`; });
+  $('cmp-fast').src = `${L}/B_orbit_fast_combined.mp4`; $('cmp-fast').poster = `${L}/posters/B_orbit_fast_combined.jpg`;
+  $('cmp-full').src = `${L}/B_orbit_combined.mp4`; $('cmp-full').poster = `${L}/posters/B_orbit_combined.jpg`;
   fetch(`${L}/captions.json`).then((r) => r.json()).then((c) => { $('caption-zoom').textContent = c.zoom; })
     .catch(() => { $('caption-zoom').textContent = 'Caption file could not be loaded.'; });
 
@@ -235,33 +242,65 @@
   const RATE = 0.0010972; // $ per H100 second
   const money = (s) => `$${(s * RATE).toFixed(2)}`;
 
-  function video(file, caption) {
-    return `<figure><video src="${L}/${file}.mp4" controls muted loop playsinline preload="metadata"></video><figcaption>${caption}</figcaption></figure>`;
+  // One player per output with Orbit / Zoom tabs, instead of a wall of videos. Posters show a frame
+  // up front; the video itself only downloads when played.
+  function player(id, items) {
+    const tabs = items.map(([label], j) => `<button data-k="${j}" class="${j ? '' : 'on'}">${label}</button>`).join('');
+    const [, f0, cap0] = items[0];
+    return `<div class="vplayer" data-player="${id}"><div class="vtabs">${tabs}</div>
+      <video src="${L}/${f0}.mp4" poster="${L}/posters/${f0}.jpg" controls muted loop playsinline preload="none"></video>
+      <p class="vcap">${cap0}</p></div>`;
+  }
+  function wirePlayers(root, defs) {
+    root.querySelectorAll('[data-player]').forEach((el) => {
+      const items = defs[el.dataset.player];
+      el.querySelectorAll('.vtabs button').forEach((b) => b.addEventListener('click', () => {
+        const [, f, cap] = items[+b.dataset.k];
+        const v = el.querySelector('video');
+        const wasPlaying = !v.paused;
+        v.src = `${L}/${f}.mp4`; v.poster = `${L}/posters/${f}.jpg`;
+        el.querySelector('.vcap').innerHTML = cap;
+        el.querySelectorAll('.vtabs button').forEach((x) => x.classList.toggle('on', x === b));
+        if (wasPlaying) v.play();
+      }));
+    });
   }
   for (const [key, r] of Object.entries(RUNS)) {
     document.querySelector(`[data-stats="${key}"]`).innerHTML = r.stats.map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
     const total = r.timeline.reduce((a, t) => a + t[3], 0);
-    document.querySelector(`[data-run="${key}"]`).innerHTML = `
-      <h3>Intermediate output: generation in progress</h3>
-      <div class="two">${video(`A_zoom${r.suffix}_zoom_out`, '<strong>A · zoom-out phase.</strong> Top: 3D memory reprojected into the new camera (black = never seen). Bottom: generated frame.')}
-        ${video(`B_orbit${r.suffix}_zoom_out`, '<strong>B · orbit phase.</strong> As the camera swings round, Lyra invents the stair\'s far side.')}</div>
-      <div class="two" style="margin-top:14px">${video(`A_zoom${r.suffix}_zoom_in`, 'A · zoom-in phase (81 frames).')}${video(`B_orbit${r.suffix}_zoom_in`, 'B · approach phase (81 frames).')}</div>
-      <h3>Output 1: the generated walkthrough video</h3>
-      <div class="two">${video(`A_zoom${r.suffix}_combined`, 'A · zoom: 322 frames, 20 s, 832×480.')}${video(`B_orbit${r.suffix}_combined`, 'B · orbit: 322 frames, 20 s, 832×480.')}</div>
-      <h3>Intermediate output: camera paths recovered by VIPE</h3>
-      <figure><img src="${L}/${r.paths}" alt="Top-down plot of the recovered camera paths" loading="lazy" style="background:#fffdf8"><figcaption>The red square is the frame that matches your photo.</figcaption></figure>
-      <h3>Output 2: the 3D model, rendered by NVIDIA along the path</h3>
-      <div class="two">${video(`A_zoom${r.suffix}_gs_trajectory`, 'A · render of the reconstructed 3D splat, not the generated video.')}${video(`B_orbit${r.suffix}_gs_trajectory`, 'B · render of the reconstructed 3D splat. Black corners: areas no frame covered.')}</div>
-      <p style="margin-top:12px"><a class="open" href="../splat/?model=${r.viewA}">Open 3D model · A zoom</a><a class="open" href="../splat/?model=${r.viewB}">Open 3D model · B orbit</a></p>
-      <h3>Time and cost of this run</h3>
-      <div class="table-wrap"><table>
+    const defs = {
+      [`${key}-video`]: [['Orbit around the stair', `B_orbit${r.suffix}_combined`, 'Generated walkthrough video · orbit · 322 frames, 20 s, 832×480.'],
+                         ['Zoom in and out', `A_zoom${r.suffix}_combined`, 'Generated walkthrough video · zoom · 322 frames, 20 s, 832×480.']],
+      [`${key}-3d`]: [['Orbit around the stair', `B_orbit${r.suffix}_gs_trajectory`, 'NVIDIA\'s render of the reconstructed 3D model (not the video). Black corners: areas no frame covered.'],
+                      ['Zoom in and out', `A_zoom${r.suffix}_gs_trajectory`, 'NVIDIA\'s render of the reconstructed 3D model (not the video).']],
+      [`${key}-mid`]: [['Orbit phase', `B_orbit${r.suffix}_zoom_out`, 'Top: Lyra\'s 3D memory reprojected into the moving camera (black = never seen). Bottom: the frame it generated.'],
+                       ['Zoom-out phase', `A_zoom${r.suffix}_zoom_out`, 'Top: 3D memory reprojected into the new camera. Bottom: the generated frame.'],
+                       ['Approach (orbit run)', `B_orbit${r.suffix}_zoom_in`, 'First 81 frames: approaching the stair.'],
+                       ['Zoom-in (zoom run)', `A_zoom${r.suffix}_zoom_in`, 'First 81 frames: zooming towards the stair.']],
+    };
+    const runEl = document.querySelector(`[data-run="${key}"]`);
+    runEl.innerHTML = `
+      <div class="two">
+        <div><h3>The generated video</h3>${player(`${key}-video`, defs[`${key}-video`])}</div>
+        <div><h3>The 3D model it became</h3>${player(`${key}-3d`, defs[`${key}-3d`])}
+          <p style="margin-top:6px"><a class="open" href="../splat/?model=${r.viewB}" target="_blank" rel="noopener">↗ Walk through it in 3D · orbit</a><a class="open" href="../splat/?model=${r.viewA}" target="_blank" rel="noopener" style="background:transparent;color:var(--accent);border:1.5px solid var(--accent)">zoom</a></p></div>
+      </div>
+      <details class="more"><summary>Show intermediate outputs (generation in progress, camera paths)</summary>
+        <div class="two" style="margin-top:12px">
+          <div>${player(`${key}-mid`, defs[`${key}-mid`])}</div>
+          <figure><img src="${L}/${r.paths}" alt="Top-down plot of the recovered camera paths" loading="lazy" style="background:#fffdf8"><figcaption>Camera paths recovered by VIPE. The red square is the frame that matches your photo.</figcaption></figure>
+        </div>
+      </details>
+      <details class="more"><summary>Show step-by-step time and cost</summary>
+      <div class="table-wrap" style="margin-top:12px"><table>
         <thead><tr><th>Step (per H100; both videos ran in parallel)</th><th>When (IST)</th><th class="num">Duration</th><th class="num">Cost per run</th></tr></thead>
         <tbody>${r.timeline.map(([s, w, d, sec]) => `<tr><td>${s}</td><td>${w}</td><td class="num">${d}</td><td class="num">${money(sec)}</td></tr>`).join('')}</tbody>
         <tfoot>
           <tr><td>One 3D world (A or B)</td><td></td><td class="num">${Math.round(total / 60)} min</td><td class="num">${money(total)}</td></tr>
           <tr><td>Both 3D worlds (2 × H100 in parallel)</td><td></td><td class="num">${Math.round(total / 60)} min wall</td><td class="num">${money(2 * total)}</td></tr>
         </tfoot>
-      </table></div>`;
+      </table></div></details>`;
+    wirePlayers(runEl, defs);
   }
   const f = RUNS.fast, F = RUNS.full;
   const ft = f.timeline.reduce((a, t) => a + t[3], 0), Ft = F.timeline.reduce((a, t) => a + t[3], 0);

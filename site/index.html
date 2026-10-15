@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Palm House: Code vs World Model</title>
-  <meta name="description" content="One photo of the Schönbrunn Palm House turned into 3D three ways: a coding agent writing Three.js, free world models (HY-World 2.0, Apple SHARP), and a hybrid of both.">
+  <title>One Photo to Video and 3D</title>
+  <meta name="description" content="A quick check of where world models are: one photo of the Schönbrunn Palm House, and the video and explorable 3D world each model produces from it, ranked, with what each cost.">
   <style>
     :root {
       --bg: #f6f3ec; --surface: #fffdf8; --ink: #24231f; --muted: #6a665b; --line: #e2dccd;
@@ -64,44 +64,64 @@
     code { font: 13.5px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--chip); padding: 1px 5px; border-radius: 4px; }
     ul.plain { padding-left: 20px; color: var(--muted); }
     footer { margin-top: 48px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+
+    .purpose { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+    .purpose ol { margin: 6px 0 0; padding-left: 20px; } .purpose li { margin-bottom: 4px; }
+    .ranked { display: flex; flex-direction: column; gap: 14px; }
+    .model { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; display: grid; grid-template-columns: 44px 220px 1fr 170px; gap: 16px; padding: 14px; align-items: start; }
+    .model .rank { font-size: 26px; font-weight: 800; color: var(--muted); text-align: center; line-height: 1; padding-top: 4px; }
+    .model .thumb { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 9px; display: block; border: 1px solid var(--line); background: #000; }
+    .model h3 { font-size: 18px; margin: 0 0 4px; }
+    .model p { color: var(--muted); font-size: 15px; margin: 6px 0 10px; }
+    .model .cost { text-align: right; }
+    .model .cost b { display: block; font-size: 30px; line-height: 1.1; letter-spacing: -0.01em; }
+    .model .cost span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .btn { font: inherit; font-size: 14px; font-weight: 600; border-radius: 8px; padding: 7px 14px; cursor: pointer; text-decoration: none; border: 1.5px solid var(--accent); }
+    .btn.play { background: var(--accent); color: var(--accent-ink); }
+    .btn.walk { background: transparent; color: var(--accent); }
+    .btn[disabled] { border-color: var(--line); color: var(--muted); background: transparent; cursor: default; font-weight: 500; }
+    .actions .alt { font-size: 13px; color: var(--muted); } .actions .alt a { color: var(--muted); }
+    .player { grid-column: 1 / -1; display: none; }
+    .player.is-open { display: block; }
+    .player video { width: 100%; max-height: 72vh; display: block; border-radius: 10px; background: #000; }
+    .player .tabs { display: flex; gap: 6px; margin: 0 0 8px; flex-wrap: wrap; align-items: center; }
+    .player .tabs button { font: inherit; font-size: 13px; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+    .player .tabs button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .player .tabs .note { color: var(--muted); font-size: 13px; margin-left: 4px; }
+    .total { margin-top: 12px; color: var(--muted); font-size: 14px; }
+    @media (max-width: 900px) { .model { grid-template-columns: 34px 1fr; } .model .thumb { grid-column: 2; } .model .info, .model .cost { grid-column: 2; } .model .cost { text-align: left; } .model .cost b { display: inline; font-size: 24px; } .model .cost span { display: inline; margin-left: 6px; } }
     @media (max-width: 860px) { .hero, .cards, .findings { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 <main>
-  <h1>One photo, three ways to make it 3D</h1>
-  <p class="lede">A single photograph of the cast-iron spiral staircase in Vienna's Schönbrunn Palm House, rebuilt as an explorable 3D scene by a coding agent writing Three.js, by world models (including NVIDIA Lyra 2.0 on rented H100s), and by a hybrid of the two. Everything here ran on free tiers and free credits.</p>
+  <h1>One photo → a video and a 3D world</h1>
+  <p class="lede">A quick check of where today's world models are, including ones you can host yourself. Every model got the same single photo. For each, see the <strong>video</strong> it can produce and the <strong>3D world</strong> you can walk through, with what it cost to run. Ranked best first.</p>
 
   <section class="hero">
     <figure style="margin:0">
       <img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/palm_house.jpg" alt="White cast-iron spiral staircase among fan palms under a curved glass roof">
-      <figcaption>The input: <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">“20250501 Palm House Schönbrunn 02”</a> by Flocci Nivis, CC BY-SA 4.0.</figcaption>
+      <figcaption>The only input: <a href="https://commons.wikimedia.org/wiki/File:20250501_Palm_House_Sch%C3%B6nbrunn_02.jpg">“20250501 Palm House Schönbrunn 02”</a> by Flocci Nivis, CC BY-SA 4.0.</figcaption>
     </figure>
-    <div class="q">
-      <h3>The question</h3>
-      <p>Do world models make 3D scenes better than a coding agent alone?</p>
+    <div class="purpose">
+      <h3>How to read this page</h3>
       <ol>
-        <li><strong>Coding agent:</strong> Claude Code looks at the photo and writes the scene procedurally: stair, glasshouse, palms.</li>
-        <li><strong>World model:</strong> the photo goes to Tencent HY-World 2.0 and Apple SHARP on free Hugging Face GPUs, and to NVIDIA Lyra 2.0 on Modal H100s; each returns a 3D Gaussian splat.</li>
-        <li><strong>Hybrid:</strong> the coded staircase replaces the world model's own stair inside its splat, so photographic plants surround real, climbable geometry.</li>
+        <li><strong>▶ Play video</strong> plays what the model generated from the photo, right here.</li>
+        <li><strong>↗ Open 3D walkthrough</strong> opens the model's 3D world in a new tab: drag to look around, scroll to move.</li>
+        <li><strong>Cost</strong> is the compute for one result, from Modal billing or each service's pricing.</li>
       </ol>
+      <p style="margin-top:10px;color:var(--muted);font-size:14.5px">Only NVIDIA Lyra generates a real video. The other world models output 3D directly, so they have no video.</p>
     </div>
   </section>
 
-  <h2>Explore the results</h2>
+  <h2>Results, best first</h2>
+  <div class="ranked" id="ranked"></div>
+  <p class="total">Ranked by how convincing the result is, judged by eye on this one photo (9–10 Oct 2026). Lyra total across all runs: <strong>$7.29</strong> on the Modal dashboard, from the free $30 monthly credit. Marble used the World Labs API's included credits. Everything else ran free.</p>
+
+  <h2 style="margin-top:64px">More detail</h2>
+  <p class="lede" style="font-size:15px">The full NVIDIA Lyra story (inputs, intermediate outputs, distilled vs full quality, a refinement experiment) is on <a href="lyra/">its own page</a>. We also tested whether a <strong>coding agent</strong> (Claude Code writing Three.js) or a <strong>hybrid</strong> of code and a world model does better than world models alone:</p>
   <div class="cards">
-    <article class="card" style="grid-column: 1 / -1">
-      <div class="imgs">
-        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/lyra_full_photo.jpg" alt="Lyra full-quality 3D splat rendered from the photo viewpoint" loading="lazy"><figcaption>full quality · 3D render, photo view</figcaption></figure>
-        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/lyra_full_side.jpg" alt="Lyra full-quality 3D splat rendered from the side of the stair" loading="lazy"><figcaption>full quality · 3D render, around the stair</figcaption></figure>
-      </div>
-      <div class="body">
-        <div><span class="tag">world model</span><span class="tag">NVIDIA Lyra 2.0</span><span class="tag">distilled: ~11 min · ~$0.74 per world</span><span class="tag">full quality: ~44 min · ~$2.92 per world</span></div>
-        <h3>Lyra 2.0: photo → generated walkthrough video → 3D world</h3>
-        <p>The strongest result so far. Lyra generates a camera walkthrough video (zoom or orbit) from the one photo, then reconstructs it into an 11-million-Gaussian 3D scene. It keeps the filigree, the gothic gate and the glass roof, and invents a believable far side of the stair. A short gsplat refinement against its own video then sharpened the 3D model by +5.3 dB on held-out frames, for about $0.18.</p>
-        <div><a class="open" href="lyra/">Read the full story: distilled vs full quality, time, cost</a> <a class="open" href="splat/?model=lyra_B_refined" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · refined</a> <a class="open" href="splat/?model=lyra_B_full" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · full</a> <a class="open" href="splat/?model=lyra_B" style="background:transparent;color:var(--accent);border:1px solid var(--accent)">3D · orbit · distilled</a></div>
-      </div>
-    </article>
     <article class="card">
       <div class="imgs">
         <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/coded_photo.jpg" alt="Coded scene from the photo viewpoint" loading="lazy"><figcaption>photo view</figcaption></figure>
@@ -112,30 +132,6 @@
         <h3>Hand-coded scene</h3>
         <p>About 1,000 lines of procedural code: a parametric spiral stair, a ribbed glass dome and instanced palms. Works from every angle; you can walk the floor and climb to the top gallery. It looks stylised next to the photo.</p>
         <a class="open" href="coded/">Open the coded scene</a>
-      </div>
-    </article>
-    <article class="card">
-      <div class="imgs">
-        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/sharp_photo.jpg" alt="SHARP splat from the photo viewpoint" loading="lazy"><figcaption>photo view</figcaption></figure>
-        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/sharp_wide.jpg" alt="SHARP splat from the side, revealing a thin shell" loading="lazy"><figcaption>step back</figcaption></figure>
-      </div>
-      <div class="body">
-        <div><span class="tag">world model</span><span class="tag">Apple SHARP</span></div>
-        <h3>SHARP Gaussian splat</h3>
-        <p>The most photographic from where the photo was taken. Step aside and it turns out to be a 2.5D shell: nothing behind the stair, filigree smoothed away, glass roof missing.</p>
-        <a class="open" href="splat/?model=sharp">Open the SHARP splat</a>
-      </div>
-    </article>
-    <article class="card">
-      <div class="imgs">
-        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/hyworld_photo.jpg" alt="HY-World splat from the photo viewpoint" loading="lazy"><figcaption>photo view</figcaption></figure>
-        <figure><img src="https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models/images/shots/hyworld_wide.jpg" alt="HY-World splat from the side" loading="lazy"><figcaption>step back</figcaption></figure>
-      </div>
-      <div class="body">
-        <div><span class="tag">world model</span><span class="tag">HY-World 2.0</span></div>
-        <h3>HY-World 2.0 splat</h3>
-        <p>Keeps the pierced riser pattern, the gothic gate and the handrail sharper than SHARP, but drops the sky and the glazing entirely, and the plants are sparse.</p>
-        <a class="open" href="splat/?model=hyworld">Open the HY-World splat</a>
       </div>
     </article>
     <article class="card">
@@ -211,6 +207,82 @@
     <p>Apple SHARP outputs are produced under Apple's research-only model licence; HY-World 2.0 under Tencent's licence. This is a non-commercial research comparison. Viewers use <a href="https://threejs.org">Three.js</a> and <a href="https://github.com/mkkellogg/GaussianSplats3D">GaussianSplats3D</a>.</p>
   </footer>
 </main>
+<script>
+  const R = 'https://pub-ac14e3e9a8a8474fbe57e2ae57dd761c.r2.dev/world-models';
+  const MODELS = [
+    { name: 'NVIDIA Lyra 2.0 · full quality', thumb: 'images/shots/lyra_full_photo.jpg',
+      tags: ['open weights', 'self-hosted · one H100 80 GB on Modal', 'video + 3D'],
+      cost: '$2.92', costNote: 'per world · 44 min of H100 (+$0.18 to refine the 3D)',
+      verdict: 'Best overall. Generates a sharp, consistent walkthrough video and turns it into an 11-million-Gaussian 3D world that keeps the filigree, the gate and the glass roof. Its 3D model is softer than its video; a short refinement sharpens it.',
+      videos: [['Orbit around the stair', 'lyra/B_orbit_combined.mp4', 'lyra/posters/B_orbit_combined.jpg'], ['Zoom in and out', 'lyra/A_zoom_combined.mp4', 'lyra/posters/A_zoom_combined.jpg']],
+      walk: 'lyra_B_refined', alt: [['unrefined 3D', 'lyra_B_full'], ['zoom 3D', 'lyra_A_full']], more: 'lyra/#full' },
+    { name: 'NVIDIA Lyra 2.0 · distilled (fast)', thumb: 'images/shots/lyra_photo.jpg',
+      tags: ['open weights', 'self-hosted · one H100 80 GB on Modal', 'video + 3D'],
+      cost: '$0.74', costNote: 'per world · 11 min of H100',
+      verdict: 'Four times faster and cheaper than full quality, with a video that is close to it for this photo. The best value here.',
+      videos: [['Orbit around the stair', 'lyra/B_orbit_fast_combined.mp4', 'lyra/posters/B_orbit_fast_combined.jpg'], ['Zoom in and out', 'lyra/A_zoom_fast_combined.mp4', 'lyra/posters/A_zoom_fast_combined.jpg']],
+      walk: 'lyra_B', alt: [['zoom 3D', 'lyra_A']], more: 'lyra/#fast' },
+    { name: 'World Labs Marble 1.1 Plus', thumb: 'images/shots/marble_view.jpg',
+      tags: ['closed model', 'hosted API', '3D only'],
+      cost: '$1.50', costNote: 'per world in API credits (1,880) · ~7 min',
+      verdict: 'The only model that builds a complete 360° glasshouse, including everything behind the camera. But it reinterprets the scene: the stair is smaller and a fence appears that is not in the photo.',
+      videos: [], walk: 'marble' },
+    { name: 'Tencent HY-World 2.1', thumb: 'images/shots/hyworld21_photo.jpg',
+      tags: ['used via Tencent web app', '3D only'],
+      cost: 'Free', costNote: 'Tencent web app · a few minutes',
+      verdict: 'Generates a whole explorable world around the stair, but it is blurry at the photo\'s own viewpoint.',
+      videos: [], walk: 'hyworld21' },
+    { name: 'Apple SHARP', thumb: 'images/shots/sharp_photo_clean.jpg',
+      tags: ['open weights (research licence)', 'any GPU, even CPU', '3D only'],
+      cost: 'Free', costNote: 'Hugging Face free GPU · under 1 s to run (~8 min queue)',
+      verdict: 'Near-photographic from where the photo was taken, but only a thin shell: nothing behind the stair. Its “video” is a 2-second render of that shell, not a generated video.',
+      videos: [['2-second render of its 3D output', 'videos/sharp_preview.mp4', 'videos/sharp_preview.jpg']], videoLabel: '▶ Play render', walk: 'sharp' },
+    { name: 'Tencent HY-World 2.0 (WorldMirror)', thumb: 'images/shots/hyworld_photo_clean.jpg',
+      tags: ['open weights', 'self-hostable (~24 GB GPU)', '3D only'],
+      cost: 'Free', costNote: 'Hugging Face free GPU · 0.7 s to run (~14 min queue)',
+      verdict: 'Keeps the stair\'s pierced pattern and gate sharp, but drops the sky and glass, and the 3D is a shell like SHARP\'s.',
+      videos: [], walk: 'hyworld' },
+  ];
+
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const list = document.getElementById('ranked');
+  MODELS.forEach((m, i) => {
+    const el = document.createElement('article');
+    el.className = 'model';
+    const alt = (m.alt || []).map(([label, key]) => `<a href="splat/?model=${key}" target="_blank" rel="noopener">${label}</a>`).join(' · ');
+    el.innerHTML = `
+      <div class="rank">${i + 1}</div>
+      <img class="thumb" src="${R}/${m.thumb}" alt="${esc(m.name)}: view from the photo's position" loading="lazy">
+      <div class="info">
+        <h3>${esc(m.name)}</h3>
+        <div>${m.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+        <p>${esc(m.verdict)}</p>
+        <div class="actions">
+          ${m.videos.length ? `<button class="btn play">${m.videoLabel || '▶ Play video'}</button>` : '<button class="btn" disabled title="This model outputs 3D only">No video: 3D only</button>'}
+          <a class="btn walk" href="splat/?model=${m.walk}" target="_blank" rel="noopener">↗ Open 3D walkthrough</a>
+          ${alt ? `<span class="alt">also: ${alt}</span>` : ''}
+          ${m.more ? `<span class="alt"><a href="${m.more}">details</a></span>` : ''}
+        </div>
+      </div>
+      <div class="cost"><b>${m.cost}</b><span>${esc(m.costNote)}</span></div>
+      <div class="player"></div>`;
+    list.appendChild(el);
+    if (!m.videos.length) return;
+    const player = el.querySelector('.player');
+    const btn = el.querySelector('.btn.play');
+    function show(k) {
+      const [label, src, poster] = m.videos[k];
+      player.innerHTML = `<div class="tabs">${m.videos.length > 1 ? m.videos.map((v, j) => `<button data-k="${j}" class="${j === k ? 'on' : ''}">${esc(v[0])}</button>`).join('') : `<span class="note">${esc(label)}</span>`}</div>
+        <video src="${R}/${src}" poster="${R}/${poster}" controls autoplay muted loop playsinline></video>`;
+      player.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => show(+b.dataset.k)));
+    }
+    btn.addEventListener('click', () => {
+      const open = player.classList.toggle('is-open');
+      btn.textContent = open ? '■ Hide video' : (m.videoLabel || '▶ Play video');
+      if (open) show(0); else player.innerHTML = '';
+    });
+  });
+</script>
 <script>
   document.querySelectorAll('button.copy').forEach((b) => b.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent); b.textContent = 'Copied'; }
